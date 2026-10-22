@@ -1,0 +1,159 @@
+.blackjack-table {
+    width: min(100%, 860px);
+    margin: 28px auto;
+    padding: clamp(20px, 5vw, 38px);
+    border: 2px solid #d4b65f;
+    border-radius: 180px 180px 36px 36px;
+    background:
+        radial-gradient(ellipse at 50% 40%, rgba(62, 150, 91, 0.62), transparent 72%),
+        linear-gradient(145deg, #145834, #0b3927 65%, #082b20);
+    box-shadow: inset 0 0 0 7px rgba(230, 204, 125, 0.12), 0 20px 45px rgba(0, 0, 0, 0.28);
+}
+
+.hand-zone {
+    min-height: 178px;
+}
+
+.hand-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 14px;
+}
+
+.hand-heading h2 {
+    margin: 0 0 14px;
+    color: #f3df9e;
+    font-size: 1.3rem;
+}
+
+.hand-heading span {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.92rem;
+}
+
+.hand-cards {
+    display: flex;
+    min-height: 132px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.card {
+    position: relative;
+    display: grid;
+    width: 76px;
+    height: 112px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid #e4e2d9;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #fff, #f0eee6);
+    color: #20231f;
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.35);
+}
+
+.card.red-suit {
+    color: #c33b42;
+}
+
+.card.black-suit {
+    color: #20231f;
+}
+
+.card-suit {
+    font-size: 2.7rem;
+    line-height: 1;
+}
+
+.card-corner {
+    position: absolute;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.card-corner-top {
+    top: 7px;
+    left: 7px;
+}
+
+.card-corner-bottom {
+    right: 7px;
+    bottom: 7px;
+    transform: rotate(180deg);
+}
+
+.card-back {
+    border: 4px solid #f3e4b3;
+    background: repeating-linear-gradient(45deg, #762f40, #762f40 5px, #a84b58 5px, #a84b58 10px);
+    color: #f6e7bb;
+    font-size: 2.6rem;
+    box-shadow: inset 0 0 0 3px #853a49, 0 5px 12px rgba(0, 0, 0, 0.35);
+}
+
+.card-enter {
+    animation: dealCard 360ms cubic-bezier(0.15, 0.85, 0.25, 1) both;
+}
+
+.table-divider {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 10px 0 20px;
+    color: rgba(242, 220, 149, 0.55);
+}
+
+.blackjack-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.game-result {
+    min-height: 1.7em;
+    margin: 22px 0;
+    color: #f3df9e;
+    font-size: 1.18rem;
+    font-weight: 700;
+}
+
+.responsible-note {
+    max-width: 680px;
+    margin: 26px auto 0;
+}
+
+@keyframes dealCard {
+    from {
+        opacity: 0;
+        transform: translateY(-34px) rotate(-9deg) scale(0.85);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) rotate(0) scale(1);
+    }
+}
+
+@media (max-width: 560px) {
+    .blackjack-table {
+        border-radius: 60px 60px 24px 24px;
+    }
+
+    .hand-zone {
+        min-height: 145px;
+    }
+
+    .card {
+        width: 62px;
+        height: 92px;
+    }
+
+    .hand-heading {
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+    }
+}

@@ -1,0 +1,177 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: #ecf0f1;
+    text-align: center;
+}
+
+header {
+    background-color: #e67e22;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    animation: fadeIn 2s ease-in-out;
+}
+
+main {
+    padding: 40px 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #34495e;
+    color: #ecf0f1;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.3s, background-color 0.3s;
+}
+
+button:hover {
+    background-color: #1abc9c;
+    transform: scale(1.1);
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+}
+
+.slot-machine {
+    width: min(92vw, 430px);
+    margin: 24px auto 22px;
+    padding: 20px;
+    border: 7px solid #f5c766;
+    border-radius: 28px;
+    background: linear-gradient(145deg, #c74626, #8f251f);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), inset 0 0 0 4px rgba(255, 230, 153, 0.28);
+}
+
+.machine-top {
+    margin-bottom: 14px;
+    color: #ffe49a;
+    font-size: clamp(0.9rem, 4vw, 1.25rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-shadow: 0 2px 3px #632015;
+}
+
+.reels {
+    display: flex;
+    justify-content: center;
+    gap: clamp(8px, 3vw, 14px);
+    padding: 14px;
+    border: 5px solid #d3a64c;
+    border-radius: 16px;
+    background: #6e301e;
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.45);
+}
+
+.reel {
+    display: grid;
+    width: min(24vw, 100px);
+    height: min(28vw, 116px);
+    min-height: 82px;
+    place-items: center;
+    overflow: hidden;
+    border: 3px solid #eee5d0;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #ded8c9, #fffdf4 18%, #fffdf4 82%, #ded8c9);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.16);
+}
+
+.reel-symbol {
+    display: block;
+    font-size: clamp(2.6rem, 12vw, 4.5rem);
+    line-height: 1;
+}
+
+.reel.spinning .reel-symbol {
+    animation: symbolBounce 0.16s ease-in-out infinite alternate;
+    filter: blur(1px);
+}
+
+.machine-lights {
+    margin-top: 14px;
+    color: #ffe16b;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 8px #fff3a0;
+    animation: lightPulse 0.8s ease-in-out infinite alternate;
+}
+
+.slot-controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+#result {
+    margin: 20px 0 70px;
+    font-size: 1.5rem;
+    min-height: 1.8em;
+}
+
+footer {
+    background-color: #e67e22;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.2);
+}
+
+footer a {
+    color: #ecf0f1;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Animace */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes symbolBounce {
+    from {
+        transform: translateY(-11px);
+    }
+    to {
+        transform: translateY(11px);
+    }
+}
+
+@keyframes lightPulse {
+    to {
+        opacity: 0.55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

@@ -1,0 +1,106 @@
+.mini-game-board {
+    display: grid;
+    width: min(100%, 680px);
+    min-height: 300px;
+    place-items: center;
+    margin: 30px auto;
+    padding: clamp(22px, 6vw, 50px);
+    border: 1px solid var(--casino-line);
+    border-radius: 24px;
+    background:
+        radial-gradient(ellipse at 50% 25%, rgba(47, 113, 78, 0.35), transparent 70%),
+        var(--casino-surface);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.26);
+}
+
+.dice-pair {
+    display: flex;
+    justify-content: center;
+    gap: clamp(18px, 6vw, 42px);
+}
+
+.die {
+    display: grid;
+    width: clamp(90px, 24vw, 142px);
+    aspect-ratio: 1;
+    place-items: center;
+    border: 2px solid #e7d497;
+    border-radius: 22px;
+    background: linear-gradient(145deg, #fffef7, #dfd8c4);
+    color: #251e19;
+    font-size: clamp(4.5rem, 18vw, 8rem);
+    line-height: 1;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.35), inset 0 0 12px rgba(0, 0, 0, 0.12);
+}
+
+.die.rolling {
+    animation: diceRoll 620ms ease-in-out infinite;
+}
+
+.coin {
+    display: grid;
+    width: clamp(150px, 40vw, 220px);
+    aspect-ratio: 1;
+    place-items: center;
+    border: 8px double #f2d77f;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe9a2, #c19331 70%, #875a19);
+    color: #543817;
+    font-size: clamp(1.3rem, 5vw, 2rem);
+    font-weight: 900;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), inset 0 0 0 7px rgba(255, 249, 214, 0.27);
+    backface-visibility: hidden;
+}
+
+.coin.flipping {
+    animation: coinFlip 1.35s cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+
+.game-result {
+    min-height: 1.7em;
+    margin: 20px 0;
+    color: var(--casino-gold);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.mini-game-controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@keyframes diceRoll {
+    0% {
+        transform: rotate(0) translateY(0);
+    }
+    35% {
+        transform: rotate(100deg) translateY(-18px);
+    }
+    70% {
+        transform: rotate(230deg) translateY(5px);
+    }
+    100% {
+        transform: rotate(360deg) translateY(0);
+    }
+}
+
+@keyframes coinFlip {
+    0% {
+        transform: perspective(600px) rotateY(0) scale(1);
+    }
+    45% {
+        transform: perspective(600px) rotateY(900deg) scale(1.12);
+    }
+    100% {
+        transform: perspective(600px) rotateY(1800deg) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .die.rolling,
+    .coin.flipping {
+        animation-duration: 0.01ms;
+        animation-iteration-count: 1;
+    }
+}
