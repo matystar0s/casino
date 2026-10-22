@@ -31,11 +31,13 @@ service cloud.firestore {
     function isValidRewardClaim() {
       let previousIndex = resource.data.rewardIndex;
       let previousClaim = resource.data.lastRewardAt;
+      let rewardDay = previousIndex == 7 ? 0 : previousIndex;
+      let nextIndex = rewardDay == 6 ? 7 : rewardDay + 1;
       return previousIndex >= 0
-        && previousIndex <= 6
-        && request.resource.data.rewardIndex == ((previousIndex + 1) % 7)
+        && previousIndex <= 7
+        && request.resource.data.rewardIndex == nextIndex
         && request.resource.data.lastRewardAt == request.time
-        && request.resource.data.balance == resource.data.balance + rewardAmount(previousIndex)
+        && request.resource.data.balance == resource.data.balance + rewardAmount(rewardDay)
         && (previousClaim == null
           || request.time >= previousClaim + duration.value(24, 'h'));
     }

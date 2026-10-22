@@ -68,8 +68,9 @@ Console. The rules intentionally deny client writes to the `admins` collection.
 
 The seven daily rewards are 100, 200, 300, 400, 500, 600, and 1,000 credits.
 The first is available as soon as the verified account is created; later
-rewards unlock 24 hours after the previous claim. After day seven, the sequence
-starts over after another 24 hours.
+rewards unlock 24 hours after the previous claim. Every reward card displays
+its own live countdown, and claimed rewards remain marked as **Vyzvednuto**.
+After day seven, a new cycle starts after another 24 hours.
 
 Credits are for demonstration games only; game results and balance changes are
 calculated in the browser and are not suitable for real-money use. Existing

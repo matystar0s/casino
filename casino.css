@@ -394,9 +394,17 @@ button:disabled {
 }
 
 .reward-status {
-    min-height: 2.6em;
+    min-height: 3.5em;
     color: var(--casino-muted);
     font-size: 0.84rem;
+}
+
+.reward-countdown {
+    display: inline-block;
+    margin-top: 4px;
+    color: var(--casino-gold);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
 }
 
 .reward-card button {

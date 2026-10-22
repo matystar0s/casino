@@ -76,13 +76,13 @@
 
         const actions = document.createElement('div');
         actions.className = 'account-actions';
-        const accountButton = document.createElement('button');
-        accountButton.type = 'button';
-        accountButton.textContent = currentUser ? 'Účet' : 'Přihlásit / vytvořit účet';
-        accountButton.addEventListener('click', openDialog);
-        actions.append(accountButton);
-
-        if (currentUser) {
+        if (!currentUser) {
+            const accountButton = document.createElement('button');
+            accountButton.type = 'button';
+            accountButton.textContent = 'Přihlásit / vytvořit účet';
+            accountButton.addEventListener('click', openDialog);
+            actions.append(accountButton);
+        } else {
             if (developer) {
                 const developerLink = document.createElement('a');
                 developerLink.className = 'button-link';
@@ -155,13 +155,15 @@
             return;
         }
 
-        const currentIndex = currentAccount.rewardIndex || 0;
+        const currentIndex = Number.isInteger(currentAccount.rewardIndex)
+            ? currentAccount.rewardIndex
+            : 0;
         const lastRewardAt = currentAccount.lastRewardAt;
         const lastRewardTime = lastRewardAt && typeof lastRewardAt.toMillis === 'function'
             ? lastRewardAt.toMillis()
             : null;
-        const nextRewardTime = lastRewardTime === null ? Date.now() : lastRewardTime + REWARD_INTERVAL;
-        const canClaim = Date.now() >= nextRewardTime;
+        const now = Date.now();
+        let hasCountdown = false;
 
         REWARDS.forEach((amount, index) => {
             const card = document.createElement('article');
@@ -171,35 +173,49 @@
             const value = document.createElement('span');
             value.className = 'reward-value';
             value.textContent = `+${amount} kreditů`;
-            const status = document.createElement('span');
-            status.className = 'reward-status';
+            const details = document.createElement('span');
+            details.className = 'reward-status';
             const button = document.createElement('button');
             button.type = 'button';
             button.disabled = true;
             button.textContent = 'Zamčeno';
+            const completedCycle = currentIndex >= REWARDS.length;
+            const nextCycleDayOne = completedCycle && index === 0;
+            const alreadyClaimed = completedCycle || index < currentIndex;
+            const unlockTime = lastRewardTime === null
+                ? now
+                : lastRewardTime + REWARD_INTERVAL * (completedCycle
+                    ? index + 1
+                    : alreadyClaimed ? 1 : index - currentIndex + 1);
+            const canClaim = (index === currentIndex || nextCycleDayOne) &&
+                now >= unlockTime;
 
-            if (index < currentIndex) {
-                status.textContent = 'Vyzvednuto';
+            if (alreadyClaimed) {
+                details.textContent = 'Vyzvednuto';
                 button.textContent = 'Vyzvednuto';
-            } else if (index === currentIndex && canClaim) {
-                status.textContent = index === 0 && lastRewardTime === null
-                    ? 'Otevřeno ihned'
-                    : 'Odměna je připravena';
+            }
+
+            if (canClaim) {
+                details.textContent = nextCycleDayOne ? 'Nový týden je otevřen' : 'Odměna je připravena';
                 button.disabled = developer;
                 button.textContent = 'Vyzvednout';
                 button.addEventListener('click', claimReward);
-            } else if (index === currentIndex) {
-                status.textContent = `Otevře se za ${formatCountdown(nextRewardTime - Date.now())}`;
-                button.textContent = 'Čeká se';
-            } else {
-                status.textContent = 'Odemkne se po předchozí odměně';
+            } else if (unlockTime > now) {
+                const countdown = document.createElement('span');
+                countdown.className = 'reward-countdown';
+                countdown.textContent = formatCountdown(unlockTime - now);
+                details.append(document.createElement('br'), countdown);
+                if (!alreadyClaimed) button.textContent = 'Čeká se';
+                hasCountdown = true;
+            } else if (!alreadyClaimed) {
+                details.textContent = index === 0 ? 'Otevřeno ihned' : 'Odměna se odemkne po předchozí';
             }
-            card.append(title, value, status, button);
+            card.append(title, value, details, button);
             cards.append(card);
         });
         rewardPanel.append(cards);
 
-        if (currentIndex < REWARDS.length && !canClaim) {
+        if (hasCountdown) {
             rewardTimer = window.setInterval(renderRewards, 1000);
         }
     }
@@ -542,14 +558,20 @@
                 if (!snapshot.exists()) throw new Error('Hráčský účet nebyl nalezen.');
                 const account = snapshot.data();
                 if (account.disabled) throw new Error('Tento účet byl zablokován.');
-                const rewardIndex = account.rewardIndex || 0;
-                if (rewardIndex >= REWARDS.length) throw new Error('Denní odměny nejsou dostupné.');
+                const storedIndex = Number.isInteger(account.rewardIndex) ? account.rewardIndex : 0;
+                const rewardIndex = storedIndex === REWARDS.length ? 0 : storedIndex;
+                if (rewardIndex < 0 || rewardIndex >= REWARDS.length) {
+                    throw new Error('Denní odměny nejsou dostupné.');
+                }
                 if (account.lastRewardAt &&
                     Date.now() < account.lastRewardAt.toMillis() + REWARD_INTERVAL) {
                     throw new Error('Další odměna ještě není připravená.');
                 }
                 const balance = account.balance + REWARDS[rewardIndex];
-                const nextIndex = (rewardIndex + 1) % REWARDS.length;
+                if (!Number.isSafeInteger(balance)) throw new Error('Zůstatek je příliš vysoký.');
+                const nextIndex = rewardIndex === REWARDS.length - 1
+                    ? REWARDS.length
+                    : rewardIndex + 1;
                 transaction.update(accountRef, {
                     balance,
                     rewardIndex: nextIndex,
