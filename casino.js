@@ -224,12 +224,36 @@
                         <button type="submit" name="action" value="login" class="button-secondary">Přihlásit se</button>
                         <button type="submit" name="action" value="create">Vytvořit účet (+1000 kreditů)</button>
                     </div>
+                    <button class="button-quiet" type="button" data-action="reset-password">Zapomenuté heslo – poslat odkaz</button>
                     <p class="dialog-note">Při prvním přihlášení ověřeným e-mailem se vytvoří sdílený účet s 1000 testovacími kredity.</p>
                 </form>`;
             document.body.append(dialog);
             dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
             dialog.addEventListener('click', (event) => {
                 if (event.target === dialog) dialog.close();
+            });
+            dialog.querySelector('[data-action="reset-password"]').addEventListener('click', async (event) => {
+                const resetButton = event.currentTarget;
+                const message = dialog.querySelector('.account-dialog-message');
+                const loginName = dialog.querySelector('#accountEmail').value.trim();
+                const email = loginName.toLocaleLowerCase('en-US') === 'root'
+                    ? window.CASINO_FIREBASE_CONFIG.developerEmail
+                    : loginName;
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    message.textContent = 'Zadejte platný e-mail nebo jméno root.';
+                    return;
+                }
+                resetButton.disabled = true;
+                try {
+                    await ready;
+                    await firebase.sendPasswordResetEmail(auth, email);
+                    message.textContent = 'Pokud účet existuje, Firebase poslal na jeho e-mail odkaz k obnovení hesla.';
+                } catch (error) {
+                    console.error('Nepodařilo se poslat odkaz k obnovení hesla.', error);
+                    message.textContent = firebaseErrorMessage(error);
+                } finally {
+                    resetButton.disabled = false;
+                }
             });
             dialog.querySelector('form').addEventListener('submit', async (event) => {
                 event.preventDefault();
@@ -297,6 +321,7 @@
             'auth/email-already-in-use': 'Tento e-mail už účet má. Přihlaste se.',
             'auth/invalid-credential': 'E-mail root nebo heslo nesouhlasí. Zkontrolujte, že tento účet existuje ve Firebase Authentication a používáte jeho aktuální heslo.',
             'auth/invalid-email': 'Zadejte platnou e-mailovou adresu.',
+            'auth/user-not-found': 'Účet v Firebase Authentication neexistuje. Nejdříve jej vytvořte.',
             'auth/weak-password': 'Heslo musí mít alespoň 6 znaků.',
             'auth/too-many-requests': 'Příliš mnoho pokusů. Zkuste to později.',
             'auth/operation-not-allowed': 'Ve Firebase Console zapněte přihlášení e-mailem a heslem.',

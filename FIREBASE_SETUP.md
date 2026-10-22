@@ -25,6 +25,10 @@ The sign-in form accepts `root` as a shortcut for the developer email configured
 in `firebase-config.js`. This is a public static file, so the developer email
 will be visible to site visitors; authentication still requires the Firebase
 password. Never put the password in this file or in the repository.
+If the password is rejected, select **Zapomenuté heslo – poslat odkaz** in the
+sign-in dialog after entering `root`. Firebase can only reset a password for a
+root account that already exists in Authentication. Otherwise, register the
+developer email first, verify it, and add its UID to the `admins` collection.
 
 1. If the root email does not already exist in Firebase Authentication, register
    through the website with that email, a strong, unique password, and the
