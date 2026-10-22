@@ -21,6 +21,11 @@ this repository.
 
 ## Set up the root account
 
+The sign-in form accepts `root` as a shortcut for the developer email configured
+in `firebase-config.js`. This is a public static file, so the developer email
+will be visible to site visitors; authentication still requires the Firebase
+password. Never put the password in this file or in the repository.
+
 1. If the root email does not already exist in Firebase Authentication, register
    through the website with that email, a strong, unique password, and the
    display name `root`. If it already exists, sign in instead.

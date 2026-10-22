@@ -214,7 +214,7 @@
                     <h2>Hráčský účet</h2>
                     <p class="dialog-note">Registrace a přihlášení používají Firebase. Pro vytvoření účtu zadejte e-mail, herní jméno a heslo. E-mail je potřeba ověřit.</p>
                     <label for="accountEmail">E-mail</label>
-                    <input id="accountEmail" name="email" type="email" maxlength="254" autocomplete="username" required>
+                    <input id="accountEmail" name="email" type="text" maxlength="254" autocomplete="username" required>
                     <label for="accountName">Herní jméno (při registraci)</label>
                     <input id="accountName" name="name" type="text" maxlength="24" autocomplete="nickname">
                     <label for="accountPassword">Heslo</label>
@@ -236,14 +236,21 @@
                 const form = event.currentTarget;
                 const message = dialog.querySelector('.account-dialog-message');
                 const submitButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
-                const email = form.elements.email.value.trim();
+                const loginName = form.elements.email.value.trim();
                 const name = form.elements.name.value.trim();
                 const password = form.elements.password.value;
                 const action = event.submitter ? event.submitter.value : 'login';
+                const email = action === 'login' && loginName.toLocaleLowerCase('en-US') === 'root'
+                    ? window.CASINO_FIREBASE_CONFIG.developerEmail
+                    : loginName;
                 submitButtons.forEach((button) => { button.disabled = true; });
                 try {
                     await ready;
                     if (action === 'create') {
+                        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                            message.textContent = 'Zadejte platnou e-mailovou adresu.';
+                            return;
+                        }
                         if (!name || name.length > 24) {
                             message.textContent = 'Zadejte herní jméno o maximálně 24 znacích.';
                             return;
@@ -288,11 +295,12 @@
     function firebaseErrorMessage(error) {
         const messages = {
             'auth/email-already-in-use': 'Tento e-mail už účet má. Přihlaste se.',
-            'auth/invalid-credential': 'Zadaný e-mail nebo heslo není správné.',
+            'auth/invalid-credential': 'E-mail root nebo heslo nesouhlasí. Zkontrolujte, že tento účet existuje ve Firebase Authentication a používáte jeho aktuální heslo.',
             'auth/invalid-email': 'Zadejte platnou e-mailovou adresu.',
             'auth/weak-password': 'Heslo musí mít alespoň 6 znaků.',
             'auth/too-many-requests': 'Příliš mnoho pokusů. Zkuste to později.',
             'auth/operation-not-allowed': 'Ve Firebase Console zapněte přihlášení e-mailem a heslem.',
+            'auth/network-request-failed': 'Firebase se nepodařilo kontaktovat. Zkontrolujte připojení k internetu.',
             'permission-denied': 'Firebase zamítl přístup. Zkontrolujte nasazená pravidla Firestore.'
         };
         return messages[error.code] || error.message || 'Operaci se nepodařilo dokončit.';
@@ -371,6 +379,11 @@
             };
             const adminDoc = await firebase.getDoc(firebase.doc(database, 'admins', user.uid));
             developer = adminDoc.exists() && adminDoc.data().enabled === true;
+            if (!developer &&
+                user.email.toLocaleLowerCase('en-US') ===
+                    window.CASINO_FIREBASE_CONFIG.developerEmail.toLocaleLowerCase('en-US')) {
+                notify('Přihlášení root funguje, ale účet zatím nemá developerská oprávnění. Dokončete nastavení admins ve Firebase.');
+            }
 
             const accountRef = firebase.doc(database, 'accounts', user.uid);
             unsubscribeAccount = firebase.onSnapshot(accountRef, (snapshot) => {
