@@ -94,9 +94,9 @@ function drawFromDeck(hand) {
     return card;
 }
 
-function startNewGame() {
+async function startNewGame() {
     if (active || busy) return;
-    const nextWager = window.CasinoApp.getWager('betAmount');
+    const nextWager = await window.CasinoApp.getWager('betAmount');
     if (nextWager === null) return;
 
     wager = nextWager;
@@ -127,9 +127,9 @@ function startNewGame() {
                 const playerNatural = handValue(playerHand) === 21;
                 const dealerNatural = handValue(dealerHand) === 21;
                 if (dealerNatural) {
-                    resolveRound();
+                    void resolveRound();
                 } else if (playerNatural) {
-                    stand();
+                    void stand();
                 } else {
                     resultElement.textContent = 'Jste na tahu. Lízněte kartu, nebo se zastavte.';
                 }
@@ -138,7 +138,7 @@ function startNewGame() {
     });
 }
 
-function drawCard() {
+async function drawCard() {
     if (!active || busy) return;
     const card = drawFromDeck(playerHand);
     if (!card) {
@@ -149,19 +149,19 @@ function drawCard() {
     updateScores();
     const total = handValue(playerHand);
     if (total > 21) {
-        finishRound('Prohra', 0, `Překročili jste 21 (${total}). Dealer vyhrává.`);
+        await finishRound('Prohra', 0, `Překročili jste 21 (${total}). Dealer vyhrává.`);
     } else if (total === 21) {
-        stand();
+        await stand();
     } else {
         resultElement.textContent = `Váš součet je ${total}. Chcete další kartu, nebo se zastavíte?`;
     }
 }
 
-function endGame() {
-    stand();
+async function endGame() {
+    await stand();
 }
 
-function stand() {
+async function stand() {
     if (!active || busy) return;
     busy = true;
     renderHand(dealerHand, dealerCardsElement);
@@ -179,13 +179,13 @@ function stand() {
             return;
         }
         busy = false;
-        resolveRound();
+        void resolveRound();
     }
 
     dealerTurn();
 }
 
-function resolveRound() {
+async function resolveRound() {
     if (!active) return;
     const playerTotal = handValue(playerHand);
     const dealerTotal = handValue(dealerHand);
@@ -204,16 +204,16 @@ function resolveRound() {
         message = `Remíza: vy ${playerTotal}, dealer ${dealerTotal}. Sázka se vrací.`;
     }
 
-    finishRound(payout > wager ? 'Výhra' : payout === wager && payout > 0 ? 'Remíza' : 'Prohra', payout, message);
+    await finishRound(payout > wager ? 'Výhra' : payout === wager && payout > 0 ? 'Remíza' : 'Prohra', payout, message);
 }
 
-function finishRound(outcome, payout, message) {
+async function finishRound(outcome, payout, message) {
     if (!active) return;
     active = false;
     busy = false;
     renderHand(dealerHand, dealerCardsElement);
     updateScores(true);
-    const credited = payout === 0 || window.CasinoApp.payout(payout);
+    const credited = payout === 0 || await window.CasinoApp.payout(payout);
     resultElement.textContent = payout > 0 && !credited
         ? `${message} Výhru ${payout} kreditů se nepodařilo připsat.`
         : message;

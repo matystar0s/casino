@@ -2,9 +2,9 @@ const coin = document.getElementById('coin');
 const flipButton = document.getElementById('flipButton');
 const coinResult = document.getElementById('result');
 
-function flipCoin() {
+async function flipCoin() {
     if (flipButton.disabled) return;
-    const wager = window.CasinoApp.getWager('betAmount');
+    const wager = await window.CasinoApp.getWager('betAmount');
     if (wager === null) return;
 
     flipButton.disabled = true;
@@ -15,14 +15,14 @@ function flipCoin() {
     coin.classList.add('flipping');
     coinResult.textContent = 'Mince se točí…';
 
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
         const result = Math.random() < 0.5 ? 'orel' : 'panna';
         const wins = document.getElementById('prediction').value === result;
         const payout = wins ? wager * 2 : 0;
         coin.classList.remove('flipping');
         coin.textContent = result === 'orel' ? 'Orel' : 'Panna';
         coin.setAttribute('aria-label', `Padl ${result}`);
-        const credited = payout === 0 || window.CasinoApp.payout(payout);
+        const credited = payout === 0 || await window.CasinoApp.payout(payout);
         coinResult.textContent = payout > 0 && credited
             ? `Padl ${result}. Vyhráli jste ${payout} kreditů!`
             : payout > 0

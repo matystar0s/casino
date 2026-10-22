@@ -8,10 +8,10 @@ let stoppedReels = 0;
 let isSpinning = false;
 let currentWager = 0;
 
-function spinSlots() {
+async function spinSlots() {
     if (isSpinning) return;
 
-    const wager = window.CasinoApp.getWager('betAmount');
+    const wager = await window.CasinoApp.getWager('betAmount');
     if (wager === null) return;
 
     currentWager = wager;
@@ -32,7 +32,7 @@ function spinSlots() {
     });
 }
 
-function stopSlot() {
+async function stopSlot() {
     if (!isSpinning || stoppedReels >= reels.length) return;
 
     const reel = reels[stoppedReels];
@@ -49,7 +49,7 @@ function stopSlot() {
         const matchingCount = Math.max(...counts.values());
         const multiplier = matchingCount === 3 ? (result[0] === '7️⃣' ? 25 : 10) : matchingCount === 2 ? 2 : 0;
         const payout = currentWager * multiplier;
-        const credited = payout === 0 || window.CasinoApp.payout(payout);
+        const credited = payout === 0 || await window.CasinoApp.payout(payout);
         resultDiv.textContent = payout > 0 && credited
             ? `Výsledek: ${result.join(' | ')} — výhra ${payout} kreditů (${multiplier}×)!`
             : payout > 0

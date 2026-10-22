@@ -367,6 +367,44 @@ button:disabled {
     white-space: nowrap;
 }
 
+.rewards-section {
+    margin-top: 28px;
+}
+
+.reward-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.reward-card {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 16px 10px;
+    border: 1px solid var(--casino-line);
+    border-radius: 12px;
+    background: #0b1912;
+}
+
+.reward-value {
+    color: var(--casino-gold);
+    font-weight: 700;
+}
+
+.reward-status {
+    min-height: 2.6em;
+    color: var(--casino-muted);
+    font-size: 0.84rem;
+}
+
+.reward-card button {
+    width: 100%;
+    padding: 8px;
+    font-size: 0.86rem;
+}
+
 .developer-warning {
     padding: 14px 16px;
     border: 1px solid rgba(255, 190, 120, 0.4);
@@ -422,6 +460,36 @@ button:disabled {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.managed-account .readonly-field {
+    display: grid;
+    gap: 7px;
+    color: var(--casino-muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.readonly-field span {
+    min-height: 44px;
+    padding: 12px;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--casino-line);
+    border-radius: 9px;
+    background: #0b1912;
+    color: var(--casino-text);
+    font-weight: 400;
+}
+
+.managed-account .checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.checkbox-field input {
+    width: 20px;
+    min-height: 20px;
 }
 
 @media (max-width: 700px) {

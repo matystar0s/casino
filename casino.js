@@ -1,12 +1,28 @@
 (function () {
-    const ACCOUNTS_KEY = 'casinoDemoAccounts';
-    const ACTIVE_ACCOUNT_KEY = 'casinoDemoActiveAccount';
     const STARTING_BALANCE = 1000;
-    const DEVELOPER_ID = 'developer';
+    const REWARD_INTERVAL = 24 * 60 * 60 * 1000;
+    const REWARDS = [100, 200, 300, 400, 500, 600, 1000];
     const accountPanel = document.getElementById('casinoAccount');
+    const rewardPanel = document.getElementById('dailyRewards');
+    let firebase;
+    let auth;
+    let database;
+    let currentUser = null;
+    let currentAccount = null;
+    let developer = false;
+    let registrationInProgress = false;
     let accounts = [];
-    let activeAccountId = '';
+    let unsubscribeAccount;
+    let unsubscribeAdminAccounts;
+    let rewardTimer;
     let dialog;
+    let resolveReady;
+    let rejectReady;
+    const ready = new Promise((resolve, reject) => {
+        resolveReady = resolve;
+        rejectReady = reject;
+    });
+    ready.catch(() => {});
 
     function notify(message) {
         const toast = document.getElementById('casinoToast');
@@ -14,44 +30,42 @@
         toast.textContent = message;
         toast.classList.add('visible');
         window.clearTimeout(notify.timer);
-        notify.timer = window.setTimeout(() => toast.classList.remove('visible'), 3200);
+        notify.timer = window.setTimeout(() => toast.classList.remove('visible'), 4200);
     }
 
-    function persist() {
+    function reportError(context, error) {
+        console.error(context, error);
+        notify(error.message || 'Operaci se nepodařilo dokončit. Zkuste to znovu.');
+    }
+
+    async function waitUntilReady() {
         try {
-            localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-            if (activeAccountId) {
-                localStorage.setItem(ACTIVE_ACCOUNT_KEY, activeAccountId);
-            } else {
-                localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
-            }
+            await ready;
             return true;
         } catch (error) {
-            console.error('Nepodařilo se uložit demo účet.', error);
-            notify('Účet se nepodařilo uložit do tohoto prohlížeče.');
+            notify('Připojení k Firebase není dostupné. Zkontrolujte konfiguraci a připojení.');
             return false;
         }
     }
 
     function getAccount() {
-        return accounts.find((account) => account.id === activeAccountId) || null;
+        return currentAccount;
     }
 
     function isDeveloper() {
-        return getAccount()?.role === 'developer';
+        return developer;
     }
 
     function updatePanel() {
         if (!accountPanel) return;
         accountPanel.replaceChildren();
-        const account = getAccount();
         const summary = document.createElement('div');
         summary.className = 'account-summary';
         const name = document.createElement('strong');
-        name.textContent = account ? account.name : 'Demo účet';
+        name.textContent = currentAccount ? (developer ? 'root' : currentAccount.name) : 'Hráčský účet';
         const balance = document.createElement('span');
-        balance.textContent = account
-            ? `${account.balance.toLocaleString('cs-CZ')} kreditů`
+        balance.textContent = currentAccount
+            ? `${currentAccount.balance.toLocaleString('cs-CZ')} kreditů`
             : 'Přihlaste se nebo si vytvořte účet';
         summary.append(name, balance);
 
@@ -59,12 +73,12 @@
         actions.className = 'account-actions';
         const accountButton = document.createElement('button');
         accountButton.type = 'button';
-        accountButton.textContent = account ? 'Účet' : 'Přihlásit / vytvořit účet';
+        accountButton.textContent = currentUser ? 'Účet' : 'Přihlásit / vytvořit účet';
         accountButton.addEventListener('click', openDialog);
         actions.append(accountButton);
 
-        if (account) {
-            if (isDeveloper()) {
+        if (currentUser) {
+            if (developer) {
                 const developerLink = document.createElement('a');
                 developerLink.className = 'button-link';
                 developerLink.href = 'developer.html';
@@ -75,72 +89,118 @@
             logoutButton.type = 'button';
             logoutButton.className = 'button-quiet';
             logoutButton.textContent = 'Odhlásit';
-            logoutButton.addEventListener('click', () => {
-                const previousAccountId = activeAccountId;
-                activeAccountId = '';
-                if (persist()) {
-                    updatePanel();
-                    notify('Odhlášení proběhlo.');
-                } else {
-                    activeAccountId = previousAccountId;
+            logoutButton.addEventListener('click', async () => {
+                try {
+                    await ready;
+                    await firebase.signOut(auth);
+                } catch (error) {
+                    reportError('Nepodařilo se odhlásit.', error);
                 }
             });
             actions.append(logoutButton);
         }
-
         accountPanel.append(summary, actions);
     }
 
-    function load() {
-        try {
-            const storedAccounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]');
-            accounts = Array.isArray(storedAccounts)
-                ? storedAccounts.filter((account) =>
-                    account && typeof account.id === 'string' &&
-                    typeof account.name === 'string' &&
-                    Number.isSafeInteger(account.balance) && account.balance >= 0
-                ).map((account) => ({
-                    ...account,
-                    email: typeof account.email === 'string' ? account.email : '',
-                    passwordHash: typeof account.passwordHash === 'string' ? account.passwordHash : '',
-                    role: account.role === 'developer' ? 'developer' : 'player'
-                }))
-                : [];
-            let developer = accounts.find((account) => account.id === DEVELOPER_ID);
-            if (!developer) {
-                developer = {
-                    id: DEVELOPER_ID,
-                    name: 'root',
-                    email: 'root',
-                    passwordHash: '',
-                    balance: 0,
-                    role: 'developer'
-                };
-                accounts.push(developer);
+    function renderLeaderboard(entries) {
+        const leaderboard = document.getElementById('leaderboard');
+        if (!leaderboard) return;
+        leaderboard.replaceChildren();
+        if (!entries.length) {
+            const empty = document.createElement('p');
+            empty.className = 'dialog-note';
+            empty.textContent = 'Zatím tu nejsou žádní hráči. Zaregistrujte se a buďte první!';
+            leaderboard.append(empty);
+            return;
+        }
+        const list = document.createElement('ol');
+        list.className = 'leaderboard-list';
+        entries.forEach((entry) => {
+            const item = document.createElement('li');
+            const playerName = document.createElement('strong');
+            playerName.textContent = entry.name;
+            const playerBalance = document.createElement('span');
+            playerBalance.textContent = `${entry.balance.toLocaleString('cs-CZ')} kreditů`;
+            item.append(playerName, playerBalance);
+            list.append(item);
+        });
+        leaderboard.append(list);
+    }
+
+    function formatCountdown(milliseconds) {
+        const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+    }
+
+    function renderRewards() {
+        if (!rewardPanel) return;
+        rewardPanel.replaceChildren();
+        window.clearInterval(rewardTimer);
+        const cards = document.createElement('div');
+        cards.className = 'reward-list';
+
+        if (!currentAccount) {
+            const message = document.createElement('p');
+            message.className = 'dialog-note';
+            message.textContent = 'Pro vyzvednutí denních odměn se přihlaste ke svému účtu.';
+            rewardPanel.append(message);
+            return;
+        }
+
+        const currentIndex = currentAccount.rewardIndex || 0;
+        const lastRewardAt = currentAccount.lastRewardAt;
+        const lastRewardTime = lastRewardAt && typeof lastRewardAt.toMillis === 'function'
+            ? lastRewardAt.toMillis()
+            : null;
+        const nextRewardTime = lastRewardTime === null ? Date.now() : lastRewardTime + REWARD_INTERVAL;
+        const canClaim = Date.now() >= nextRewardTime;
+
+        REWARDS.forEach((amount, index) => {
+            const card = document.createElement('article');
+            card.className = 'reward-card';
+            const title = document.createElement('strong');
+            title.textContent = `Den ${index + 1}`;
+            const value = document.createElement('span');
+            value.className = 'reward-value';
+            value.textContent = `+${amount} kreditů`;
+            const status = document.createElement('span');
+            status.className = 'reward-status';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.disabled = true;
+            button.textContent = 'Zamčeno';
+
+            if (index < currentIndex) {
+                status.textContent = 'Vyzvednuto';
+                button.textContent = 'Vyzvednuto';
+            } else if (index === currentIndex && canClaim) {
+                status.textContent = index === 0 && lastRewardTime === null
+                    ? 'Otevřeno ihned'
+                    : 'Odměna je připravena';
+                button.disabled = developer;
+                button.textContent = 'Vyzvednout';
+                button.addEventListener('click', claimReward);
+            } else if (index === currentIndex) {
+                status.textContent = `Otevře se za ${formatCountdown(nextRewardTime - Date.now())}`;
+                button.textContent = 'Čeká se';
+            } else {
+                status.textContent = 'Odemkne se po předchozí odměně';
             }
-            developer.name = 'root';
-            developer.email = 'root';
-            developer.role = 'developer';
-            activeAccountId = localStorage.getItem(ACTIVE_ACCOUNT_KEY) || '';
-            if (!accounts.some((account) => account.id === activeAccountId)) {
-                activeAccountId = '';
-            }
-            persist();
-        } catch (error) {
-            console.error('Nepodařilo se načíst demo účet.', error);
-            accounts = [];
-            activeAccountId = '';
-            notify('Uložená data účtu nelze přečíst. Zkontrolujte nastavení prohlížeče.');
+            card.append(title, value, status, button);
+            cards.append(card);
+        });
+        rewardPanel.append(cards);
+
+        if (currentIndex < REWARDS.length && !canClaim) {
+            rewardTimer = window.setInterval(renderRewards, 1000);
         }
     }
 
-    async function hashPassword(password) {
-        if (!window.crypto?.subtle) {
-            throw new Error('Pro přihlášení je potřeba zabezpečené připojení HTTPS.');
-        }
-        const bytes = new TextEncoder().encode(password);
-        const hash = await window.crypto.subtle.digest('SHA-256', bytes);
-        return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    function renderManagedAccounts() {
+        document.dispatchEvent(new CustomEvent('casino:accounts-changed'));
     }
 
     function openDialog() {
@@ -150,12 +210,12 @@
             dialog.innerHTML = `
                 <form class="account-form">
                     <button class="dialog-close" type="button" aria-label="Zavřít">×</button>
-                    <p class="eyebrow">Online kasino · demo</p>
-                    <h2>Váš herní účet</h2>
-                    <p class="dialog-note">Demo účet a kredity se ukládají pouze v tomto prohlížeči. E-mail se neověřuje a nejde o skutečné peníze.</p>
-                    <label for="accountEmail">E-mail nebo developerské jméno</label>
-                    <input id="accountEmail" name="email" type="text" maxlength="254" autocomplete="username" required>
-                    <label for="accountName">Herní jméno (pouze při registraci)</label>
+                    <p class="eyebrow">Online kasino</p>
+                    <h2>Hráčský účet</h2>
+                    <p class="dialog-note">Registrace a přihlášení používají Firebase. Pro vytvoření účtu zadejte e-mail, herní jméno a heslo. E-mail je potřeba ověřit.</p>
+                    <label for="accountEmail">E-mail</label>
+                    <input id="accountEmail" name="email" type="email" maxlength="254" autocomplete="username" required>
+                    <label for="accountName">Herní jméno (při registraci)</label>
                     <input id="accountName" name="name" type="text" maxlength="24" autocomplete="nickname">
                     <label for="accountPassword">Heslo</label>
                     <input id="accountPassword" name="password" type="password" minlength="6" autocomplete="current-password" required>
@@ -164,7 +224,7 @@
                         <button type="submit" name="action" value="login" class="button-secondary">Přihlásit se</button>
                         <button type="submit" name="action" value="create">Vytvořit účet (+1000 kreditů)</button>
                     </div>
-                    <p class="dialog-note">Vstup do developerského dema: jméno root, heslo rootroot.</p>
+                    <p class="dialog-note">Při prvním přihlášení ověřeným e-mailem se vytvoří sdílený účet s 1000 testovacími kredity.</p>
                 </form>`;
             document.body.append(dialog);
             dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
@@ -175,132 +235,215 @@
                 event.preventDefault();
                 const form = event.currentTarget;
                 const message = dialog.querySelector('.account-dialog-message');
-                const email = form.elements.email.value.trim().toLocaleLowerCase('en-US');
+                const submitButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
+                const email = form.elements.email.value.trim();
                 const name = form.elements.name.value.trim();
                 const password = form.elements.password.value;
                 const action = event.submitter ? event.submitter.value : 'login';
-                const previousAccountId = activeAccountId;
-
-                if (email === 'root' && action === 'login') {
-                    if (password !== 'rootroot') {
-                        message.textContent = 'Neplatné přihlašovací údaje.';
-                        return;
-                    }
-                    activeAccountId = DEVELOPER_ID;
-                } else if (action === 'create') {
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                        message.textContent = 'Zadejte platnou e-mailovou adresu.';
-                        return;
-                    }
-                    if (email === 'root' || !name) {
-                        message.textContent = 'Zadejte e-mail a herní jméno.';
-                        return;
-                    }
-                    if (password.length < 6) {
-                        message.textContent = 'Heslo musí mít alespoň 6 znaků.';
-                        return;
-                    }
-                    if (accounts.some((account) => account.email.toLocaleLowerCase('en-US') === email)) {
-                        message.textContent = 'Účet s tímto e-mailem už existuje. Přihlaste se.';
-                        return;
-                    }
-                    try {
-                        const passwordHash = await hashPassword(password);
-                        const id = `player-${window.crypto.randomUUID()}`;
-                        const createdAccount = {
-                            id,
-                            email,
-                            name,
-                            passwordHash,
-                            balance: STARTING_BALANCE,
-                            role: 'player'
-                        };
-                        const previousAccountId = activeAccountId;
-                        accounts.push(createdAccount);
-                        activeAccountId = id;
-                        if (persist()) {
-                            updatePanel();
-                            dialog.close();
-                            notify('Demo účet vytvořen. Máte 1000 testovacích kreditů.');
-                            renderLeaderboard();
-                        } else {
-                            activeAccountId = previousAccountId;
-                            accounts = accounts.filter((account) => account !== createdAccount);
-                        }
-                    } catch (error) {
-                        console.error('Nepodařilo se vytvořit demo účet.', error);
-                        message.textContent = error.message;
-                    }
-                    return;
-                } else {
-                    const existing = accounts.find((account) =>
-                        account.email.toLocaleLowerCase('en-US') === email && account.role !== 'developer'
-                    );
-                    if (!existing) {
-                        message.textContent = 'Účet nebyl nalezen. Nejdříve si ho vytvořte.';
-                        return;
-                    }
-                    try {
-                        if (!existing.passwordHash || await hashPassword(password) !== existing.passwordHash) {
-                            message.textContent = 'Neplatné přihlašovací údaje.';
+                submitButtons.forEach((button) => { button.disabled = true; });
+                try {
+                    await ready;
+                    if (action === 'create') {
+                        if (!name || name.length > 24) {
+                            message.textContent = 'Zadejte herní jméno o maximálně 24 znacích.';
                             return;
                         }
-                    } catch (error) {
-                        console.error('Nepodařilo se ověřit demo účet.', error);
-                        message.textContent = error.message;
-                        return;
+                        registrationInProgress = true;
+                        try {
+                            const credential = await firebase.createUserWithEmailAndPassword(auth, email, password);
+                            await firebase.updateProfile(credential.user, { displayName: name });
+                            await firebase.sendEmailVerification(credential.user);
+                            await firebase.signOut(auth);
+                            message.textContent = 'Poslali jsme vám ověřovací e-mail. Po ověření se přihlaste.';
+                        } finally {
+                            registrationInProgress = false;
+                        }
+                    } else {
+                        const credential = await firebase.signInWithEmailAndPassword(auth, email, password);
+                        await firebase.reload(credential.user);
+                        if (!credential.user.emailVerified) {
+                            await firebase.sendEmailVerification(credential.user);
+                            await firebase.signOut(auth);
+                            message.textContent = 'Nejdříve ověřte e-mail. Poslali jsme vám nový ověřovací odkaz.';
+                            return;
+                        }
+                        dialog.close();
+                        notify('Přihlášení proběhlo.');
                     }
-                    activeAccountId = existing.id;
-                }
-
-                if (persist()) {
-                    updatePanel();
-                    dialog.close();
-                    notify(`Přihlášení proběhlo. Vítejte, ${getAccount().name}.`);
-                } else {
-                    activeAccountId = previousAccountId;
+                } catch (error) {
+                    console.error('Nepodařilo se přihlásit nebo vytvořit účet.', error);
+                    message.textContent = firebaseErrorMessage(error);
+                } finally {
+                    submitButtons.forEach((button) => { button.disabled = false; });
                 }
             });
         }
-        const current = getAccount();
-        dialog.querySelector('#accountEmail').value = current ? current.email : '';
+        dialog.querySelector('#accountEmail').value = currentUser ? currentUser.email : '';
         dialog.querySelector('#accountName').value = '';
         dialog.querySelector('#accountPassword').value = '';
         dialog.querySelector('.account-dialog-message').textContent = '';
         dialog.showModal();
     }
 
-    function renderLeaderboard() {
-        const leaderboard = document.getElementById('leaderboard');
-        if (!leaderboard) return;
-        const players = accounts
-            .filter((account) => account.role !== 'developer')
-            .sort((first, second) => second.balance - first.balance || first.name.localeCompare(second.name, 'cs-CZ'));
-        leaderboard.replaceChildren();
-        if (!players.length) {
-            const empty = document.createElement('p');
-            empty.className = 'dialog-note';
-            empty.textContent = 'Zatím tu nejsou žádné hráčské účty. Zaregistrujte se a buďte první!';
-            leaderboard.append(empty);
-            return;
-        }
-        const list = document.createElement('ol');
-        list.className = 'leaderboard-list';
-        players.slice(0, 10).forEach((player) => {
-            const item = document.createElement('li');
-            const playerName = document.createElement('strong');
-            playerName.textContent = player.name;
-            const playerBalance = document.createElement('span');
-            playerBalance.textContent = `${player.balance.toLocaleString('cs-CZ')} kreditů`;
-            item.append(playerName, playerBalance);
-            list.append(item);
-        });
-        leaderboard.append(list);
+    function firebaseErrorMessage(error) {
+        const messages = {
+            'auth/email-already-in-use': 'Tento e-mail už účet má. Přihlaste se.',
+            'auth/invalid-credential': 'Zadaný e-mail nebo heslo není správné.',
+            'auth/invalid-email': 'Zadejte platnou e-mailovou adresu.',
+            'auth/weak-password': 'Heslo musí mít alespoň 6 znaků.',
+            'auth/too-many-requests': 'Příliš mnoho pokusů. Zkuste to později.',
+            'auth/operation-not-allowed': 'Ve Firebase Console zapněte přihlášení e-mailem a heslem.',
+            'permission-denied': 'Firebase zamítl přístup. Zkontrolujte nasazená pravidla Firestore.'
+        };
+        return messages[error.code] || error.message || 'Operaci se nepodařilo dokončit.';
     }
 
-    function getWager(inputId) {
-        const account = getAccount();
-        if (!account || account.role === 'developer') {
+    async function ensureAccount(user) {
+        const accountRef = firebase.doc(database, 'accounts', user.uid);
+        let snapshot = await firebase.getDoc(accountRef);
+        if (!snapshot.exists()) {
+            const name = (user.displayName || user.email.split('@')[0]).trim().slice(0, 24) || 'Hráč';
+            const account = {
+                email: user.email,
+                name,
+                balance: STARTING_BALANCE,
+                rewardIndex: 0,
+                lastRewardAt: null,
+                disabled: false,
+                createdAt: firebase.serverTimestamp()
+            };
+            const batch = firebase.writeBatch(database);
+            batch.set(accountRef, account);
+            batch.set(firebase.doc(database, 'leaderboard', user.uid), {
+                name,
+                balance: STARTING_BALANCE
+            });
+            await batch.commit();
+            snapshot = await firebase.getDoc(accountRef);
+        }
+        return snapshot.data();
+    }
+
+    function listenToLeaderboard() {
+        const board = firebase.collection(database, 'leaderboard');
+        const topPlayers = firebase.query(board, firebase.orderBy('balance', 'desc'), firebase.limit(10));
+        firebase.onSnapshot(topPlayers, (snapshot) => {
+            renderLeaderboard(snapshot.docs.map((item) => item.data()));
+        }, (error) => reportError('Nepodařilo se načíst společný žebříček.', error));
+    }
+
+    function stopAccountListeners() {
+        if (unsubscribeAccount) unsubscribeAccount();
+        if (unsubscribeAdminAccounts) unsubscribeAdminAccounts();
+        unsubscribeAccount = null;
+        unsubscribeAdminAccounts = null;
+        currentAccount = null;
+        accounts = [];
+        developer = false;
+        renderManagedAccounts();
+    }
+
+    async function handleAuthState(user) {
+        stopAccountListeners();
+        currentUser = user;
+        updatePanel();
+        renderRewards();
+        if (!user) return;
+
+        try {
+            await firebase.reload(user);
+            if (!user.emailVerified) {
+                if (!registrationInProgress) {
+                    notify('Ověřte svou e-mailovou adresu a znovu se přihlaste.');
+                    await firebase.signOut(auth);
+                }
+                return;
+            }
+            const profile = await ensureAccount(user);
+            if (profile.disabled) {
+                notify('Tento účet byl zablokován správcem.');
+                await firebase.signOut(auth);
+                return;
+            }
+            currentAccount = {
+                id: user.uid,
+                ...profile
+            };
+            const adminDoc = await firebase.getDoc(firebase.doc(database, 'admins', user.uid));
+            developer = adminDoc.exists() && adminDoc.data().enabled === true;
+
+            const accountRef = firebase.doc(database, 'accounts', user.uid);
+            unsubscribeAccount = firebase.onSnapshot(accountRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    currentAccount = null;
+                    updatePanel();
+                    renderRewards();
+                    return;
+                }
+                const data = snapshot.data();
+                if (data.disabled && !developer) {
+                    notify('Tento účet byl zablokován správcem.');
+                    void firebase.signOut(auth);
+                    return;
+                }
+                currentAccount = { id: user.uid, ...data };
+                updatePanel();
+                renderRewards();
+            }, (error) => reportError('Nepodařilo se načíst hráčský účet.', error));
+
+            if (developer) {
+                await firebase.deleteDoc(firebase.doc(database, 'leaderboard', user.uid));
+                const allAccounts = firebase.collection(database, 'accounts');
+                unsubscribeAdminAccounts = firebase.onSnapshot(allAccounts, (snapshot) => {
+                    accounts = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+                    renderManagedAccounts();
+                }, (error) => reportError('Nepodařilo se načíst seznam účtů.', error));
+            }
+            updatePanel();
+            renderRewards();
+            renderManagedAccounts();
+        } catch (error) {
+            reportError('Nepodařilo se načíst účet z Firebase.', error);
+        }
+    }
+
+    async function updateBalance(amount) {
+        if (!await waitUntilReady()) return false;
+        const user = currentUser;
+        const account = currentAccount;
+        if (!user || !account || developer) {
+            notify('Pro hraní se přihlaste hráčským účtem.');
+            return false;
+        }
+        if (!Number.isSafeInteger(amount) || amount === 0) {
+            notify('Neplatná změna zůstatku.');
+            return false;
+        }
+        const accountRef = firebase.doc(database, 'accounts', user.uid);
+        const leaderboardRef = firebase.doc(database, 'leaderboard', user.uid);
+        try {
+            await firebase.runTransaction(database, async (transaction) => {
+                const snapshot = await transaction.get(accountRef);
+                if (!snapshot.exists()) throw new Error('Hráčský účet nebyl nalezen.');
+                const profile = snapshot.data();
+                const balance = profile.balance + amount;
+                if (profile.disabled || balance < 0 || !Number.isSafeInteger(balance)) {
+                    throw new Error('Změnu zůstatku nelze provést.');
+                }
+                transaction.update(accountRef, { balance });
+                transaction.set(leaderboardRef, { name: profile.name, balance });
+            });
+            return true;
+        } catch (error) {
+            reportError('Nepodařilo se změnit zůstatek.', error);
+            return false;
+        }
+    }
+
+    async function getWager(inputId) {
+        if (!await waitUntilReady()) return null;
+        const account = currentAccount;
+        if (!currentUser || !account || developer) {
             notify('Nejdříve se přihlaste hráčským účtem.');
             return null;
         }
@@ -311,108 +454,112 @@
             return null;
         }
         if (wager > account.balance) {
-            notify('Na tuto sázku nemáte dost kreditů. Požádejte správce o připsání kreditů.');
+            notify('Na tuto sázku nemáte dost kreditů.');
             return null;
         }
-        account.balance -= wager;
-        if (!persist()) {
-            account.balance += wager;
-            return null;
-        }
-        updatePanel();
-        renderLeaderboard();
-        return wager;
+        return await updateBalance(-wager) ? wager : null;
     }
 
-    function payout(amount) {
-        const account = getAccount();
-        if (!account || account.role === 'developer' || !Number.isSafeInteger(amount) || amount <= 0) {
-            notify('Výhru se nepodařilo připsat. Zkontrolujte svůj demo účet.');
+    async function payout(amount) {
+        if (!await waitUntilReady()) return false;
+        if (!Number.isSafeInteger(amount) || amount <= 0) {
+            notify('Výhra musí být kladné celé číslo.');
             return false;
         }
-        if (!Number.isSafeInteger(account.balance + amount)) {
-            notify('Výhru se nepodařilo připsat kvůli limitu zůstatku.');
-            return false;
+        return updateBalance(amount);
+    }
+
+    async function claimReward() {
+        if (!await waitUntilReady()) return;
+        if (!currentUser || !currentAccount || developer) return;
+        const accountRef = firebase.doc(database, 'accounts', currentUser.uid);
+        const leaderboardRef = firebase.doc(database, 'leaderboard', currentUser.uid);
+        try {
+            await firebase.runTransaction(database, async (transaction) => {
+                const snapshot = await transaction.get(accountRef);
+                if (!snapshot.exists()) throw new Error('Hráčský účet nebyl nalezen.');
+                const account = snapshot.data();
+                if (account.disabled) throw new Error('Tento účet byl zablokován.');
+                const rewardIndex = account.rewardIndex || 0;
+                if (rewardIndex >= REWARDS.length) throw new Error('Denní odměny nejsou dostupné.');
+                if (account.lastRewardAt &&
+                    Date.now() < account.lastRewardAt.toMillis() + REWARD_INTERVAL) {
+                    throw new Error('Další odměna ještě není připravená.');
+                }
+                const balance = account.balance + REWARDS[rewardIndex];
+                const nextIndex = (rewardIndex + 1) % REWARDS.length;
+                transaction.update(accountRef, {
+                    balance,
+                    rewardIndex: nextIndex,
+                    lastRewardAt: firebase.serverTimestamp()
+                });
+                transaction.set(leaderboardRef, { name: account.name, balance });
+            });
+            notify('Denní odměna byla připsána.');
+        } catch (error) {
+            reportError('Odměnu se nepodařilo vyzvednout.', error);
         }
-        account.balance += amount;
-        if (!persist()) {
-            account.balance -= amount;
-            return false;
-        }
-        updatePanel();
-        renderLeaderboard();
-        return true;
     }
 
     function managedAccounts() {
-        return accounts.filter((account) => account.role !== 'developer');
+        return accounts.map(({ unsubscribe, ...account }) => account);
     }
 
     async function updateManagedAccount(id, changes) {
-        if (!isDeveloper()) {
-            notify('Tuto akci může provést pouze developer.');
+        if (!await waitUntilReady()) return false;
+        if (!developer) {
+            notify('Tuto akci může provést pouze správce.');
             return false;
         }
-        const account = accounts.find((item) => item.id === id && item.role !== 'developer');
+        const account = accounts.find((item) => item.id === id);
         if (!account || !changes || typeof changes !== 'object') return false;
-        const email = typeof changes.email === 'string' ? changes.email.trim().toLocaleLowerCase('en-US') : account.email;
         const name = typeof changes.name === 'string' ? changes.name.trim() : account.name;
         const balance = changes.balance;
-        const newPassword = typeof changes.password === 'string' ? changes.password : '';
-        if (!name || name.length > 24 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-            !Number.isSafeInteger(balance) || balance < 0 || (newPassword && newPassword.length < 6)) {
-            notify('Zkontrolujte jméno, e-mail, počet kreditů a délku nového hesla.');
+        const disabled = typeof changes.disabled === 'boolean' ? changes.disabled : account.disabled;
+        if (!name || name.length > 24 || !Number.isSafeInteger(balance) || balance < 0) {
+            notify('Zadejte platné herní jméno a nezáporný počet kreditů.');
             return false;
         }
-        if (accounts.some((item) => item.id !== id && item.email.toLocaleLowerCase('en-US') === email)) {
-            notify('Účet s tímto e-mailem už existuje.');
-            return false;
-        }
-        const previous = {
-            name: account.name,
-            email: account.email,
-            balance: account.balance,
-            passwordHash: account.passwordHash
-        };
+        const accountRef = firebase.doc(database, 'accounts', id);
+        const leaderboardRef = firebase.doc(database, 'leaderboard', id);
         try {
-            Object.assign(account, {
-                name,
-                email,
-                balance,
-                ...(newPassword ? { passwordHash: await hashPassword(newPassword) } : {})
+            await firebase.runTransaction(database, async (transaction) => {
+                const snapshot = await transaction.get(accountRef);
+                if (!snapshot.exists()) throw new Error('Hráčský účet nebyl nalezen.');
+                transaction.update(accountRef, { name, balance, disabled });
+                if (disabled) {
+                    transaction.delete(leaderboardRef);
+                } else {
+                    transaction.set(leaderboardRef, { name, balance });
+                }
             });
+            notify('Účet byl upraven.');
+            return true;
         } catch (error) {
-            console.error('Nepodařilo se změnit heslo demo účtu.', error);
-            notify(error.message);
+            reportError('Účet se nepodařilo upravit.', error);
             return false;
         }
-        if (!persist()) {
-            Object.assign(account, previous);
-            return false;
-        }
-        updatePanel();
-        renderLeaderboard();
-        document.dispatchEvent(new CustomEvent('casino:accounts-changed'));
-        notify('Účet byl upraven.');
-        return true;
     }
 
-    function deleteManagedAccount(id) {
-        if (!isDeveloper()) {
-            notify('Tuto akci může provést pouze developer.');
-            return false;
+    function startFirebase() {
+        const config = window.CASINO_FIREBASE_CONFIG;
+        if (!config || !config.apiKey || !config.projectId || !config.appId) {
+            throw new Error('Chybí Firebase konfigurace. Zkontrolujte soubor firebase-config.js.');
         }
-        const account = accounts.find((item) => item.id === id && item.role !== 'developer');
-        if (!account) return false;
-        accounts = accounts.filter((item) => item !== account);
-        if (!persist()) {
-            accounts.push(account);
-            return false;
-        }
-        renderLeaderboard();
-        document.dispatchEvent(new CustomEvent('casino:accounts-changed'));
-        notify('Účet byl odstraněn.');
-        return true;
+        return Promise.all([
+            import('https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js'),
+            import('https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js'),
+            import('https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js')
+        ]).then(([appSdk, authSdk, firestoreSdk]) => {
+            firebase = { ...authSdk, ...firestoreSdk };
+            const app = appSdk.initializeApp(config);
+            auth = authSdk.getAuth(app);
+            database = firestoreSdk.getFirestore(app);
+            listenToLeaderboard();
+            authSdk.onAuthStateChanged(auth, (user) => {
+                void handleAuthState(user).then(resolveReady).catch(rejectReady);
+            });
+        });
     }
 
     const toast = document.createElement('div');
@@ -421,11 +568,12 @@
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
     document.body.append(toast);
-    load();
     updatePanel();
-    renderLeaderboard();
+    renderRewards();
+    renderLeaderboard([]);
 
     window.CasinoApp = {
+        ready,
         getAccount,
         getWager,
         payout,
@@ -433,6 +581,11 @@
         isDeveloper,
         managedAccounts,
         updateManagedAccount,
-        deleteManagedAccount
+        claimReward
     };
+
+    startFirebase().catch((error) => {
+        reportError('Nepodařilo se připojit k Firebase.', error);
+        rejectReady(error);
+    });
 })();

@@ -1,6 +1,7 @@
-(function () {
+(async function () {
+    await window.CasinoApp.ready;
     if (!window.CasinoApp.isDeveloper()) {
-        window.CasinoApp.notify('Pro vstup do správy se přihlaste developerským účtem root.');
+        window.CasinoApp.notify('Pro vstup do správy se přihlaste správcovským účtem root.');
         window.setTimeout(() => {
             window.location.replace('index.html');
         }, 1400);
@@ -15,7 +16,7 @@
         if (!accounts.length) {
             const empty = document.createElement('p');
             empty.className = 'dialog-note';
-            empty.textContent = 'Zatím nejsou vytvořené žádné hráčské účty.';
+            empty.textContent = 'Zatím nejsou vytvořené žádné účty hráčů.';
             accountList.append(empty);
             return;
         }
@@ -28,9 +29,8 @@
                 const fields = new FormData(form);
                 await window.CasinoApp.updateManagedAccount(account.id, {
                     name: fields.get('name'),
-                    email: fields.get('email'),
                     balance: Number(fields.get('balance')),
-                    password: fields.get('password')
+                    disabled: fields.get('disabled') === 'on'
                 });
             });
 
@@ -38,11 +38,17 @@
             heading.textContent = account.name;
             form.append(heading);
 
+            const emailLabel = document.createElement('span');
+            emailLabel.className = 'readonly-field';
+            emailLabel.textContent = 'E-mail';
+            const email = document.createElement('span');
+            email.textContent = account.email;
+            emailLabel.append(email);
+            form.append(emailLabel);
+
             [
                 ['Herní jméno', 'name', account.name, 'text'],
-                ['E-mail', 'email', account.email, 'email'],
-                ['Kredity', 'balance', String(account.balance), 'number'],
-                ['Nové heslo (volitelné)', 'password', '', 'password']
+                ['Kredity', 'balance', String(account.balance), 'number']
             ].forEach(([labelText, fieldName, value, type]) => {
                 const label = document.createElement('label');
                 label.textContent = labelText;
@@ -52,11 +58,6 @@
                 input.value = value;
                 input.required = true;
                 if (fieldName === 'name') input.maxLength = 24;
-                if (fieldName === 'password') {
-                    input.minLength = 6;
-                    input.autocomplete = 'new-password';
-                    input.required = false;
-                }
                 if (fieldName === 'balance') {
                     input.min = '0';
                     input.step = '1';
@@ -65,21 +66,23 @@
                 form.append(label);
             });
 
+            const disabledLabel = document.createElement('label');
+            disabledLabel.className = 'checkbox-field';
+            const disabled = document.createElement('input');
+            disabled.type = 'checkbox';
+            disabled.name = 'disabled';
+            disabled.checked = account.disabled === true;
+            const disabledText = document.createElement('span');
+            disabledText.textContent = 'Zablokovaný účet';
+            disabledLabel.append(disabled, disabledText);
+            form.append(disabledLabel);
+
             const actions = document.createElement('div');
             actions.className = 'managed-account-actions';
             const saveButton = document.createElement('button');
             saveButton.type = 'submit';
             saveButton.textContent = 'Uložit změny';
-            const deleteButton = document.createElement('button');
-            deleteButton.type = 'button';
-            deleteButton.className = 'button-secondary';
-            deleteButton.textContent = 'Smazat účet';
-            deleteButton.addEventListener('click', () => {
-                if (window.confirm(`Opravdu chcete smazat účet ${account.name}?`)) {
-                    window.CasinoApp.deleteManagedAccount(account.id);
-                }
-            });
-            actions.append(saveButton, deleteButton);
+            actions.append(saveButton);
             form.append(actions);
             accountList.append(form);
         });
@@ -87,4 +90,7 @@
 
     document.addEventListener('casino:accounts-changed', renderAccounts);
     renderAccounts();
-})();
+})().catch((error) => {
+    console.error('Nepodařilo se otevřít správu účtů.', error);
+    window.CasinoApp.notify('Správa účtů se nenačetla. Zkontrolujte přihlášení a pravidla Firebase.');
+});

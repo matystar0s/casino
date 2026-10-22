@@ -1,0 +1,107 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
+    }
+
+    function validName(value) {
+      return value is string && value.size() > 0 && value.size() <= 24;
+    }
+
+    function rewardAmount(index) {
+      return index == 0 ? 100
+        : index == 1 ? 200
+        : index == 2 ? 300
+        : index == 3 ? 400
+        : index == 4 ? 500
+        : index == 5 ? 600
+        : index == 6 ? 1000
+        : 0;
+    }
+
+    function isValidRewardClaim() {
+      let previousIndex = resource.data.rewardIndex;
+      let previousClaim = resource.data.lastRewardAt;
+      return previousIndex >= 0
+        && previousIndex <= 6
+        && request.resource.data.rewardIndex == ((previousIndex + 1) % 7)
+        && request.resource.data.lastRewardAt == request.time
+        && request.resource.data.balance == resource.data.balance + rewardAmount(previousIndex)
+        && (previousClaim == null
+          || request.time >= previousClaim + duration.value(24, 'h'));
+    }
+
+    function validPlayerUpdate(uid) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return signedIn()
+        && request.auth.uid == uid
+        && resource.data.disabled == false
+        && changed.hasOnly(['name', 'balance', 'rewardIndex', 'lastRewardAt'])
+        && validName(request.resource.data.name)
+        && request.resource.data.balance is int
+        && request.resource.data.balance >= 0
+        && request.resource.data.balance <= 9007199254740991
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.disabled == resource.data.disabled
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (
+          (!changed.hasAny(['rewardIndex', 'lastRewardAt'])
+            && request.resource.data.rewardIndex == resource.data.rewardIndex
+            && request.resource.data.lastRewardAt == resource.data.lastRewardAt)
+          || isValidRewardClaim()
+        );
+    }
+
+    function leaderboardMatchesAccount(uid) {
+      let account = getAfter(/databases/$(database)/documents/accounts/$(uid));
+      return account.data.disabled == false
+        && request.resource.data.keys().hasOnly(['name', 'balance'])
+        && request.resource.data.name == account.data.name
+        && request.resource.data.balance == account.data.balance;
+    }
+
+    match /admins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /accounts/{uid} {
+      allow get: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly([
+          'email', 'name', 'balance', 'rewardIndex', 'lastRewardAt', 'disabled', 'createdAt'
+        ])
+        && request.resource.data.email == request.auth.token.email
+        && validName(request.resource.data.name)
+        && request.resource.data.balance == 1000
+        && request.resource.data.rewardIndex == 0
+        && request.resource.data.lastRewardAt == null
+        && request.resource.data.disabled == false
+        && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin() || validPlayerUpdate(uid);
+      allow delete: if false;
+    }
+
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        || (signedIn() && request.auth.uid == uid && leaderboardMatchesAccount(uid));
+      allow delete: if isAdmin()
+        || (signedIn()
+          && request.auth.uid == uid
+          && getAfter(/databases/$(database)/documents/accounts/$(uid)).data.disabled == true);
+    }
+  }
+}

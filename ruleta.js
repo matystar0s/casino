@@ -29,10 +29,10 @@ rouletteNumbers.forEach((number, index) => {
     wheelNumbers.appendChild(label);
 });
 
-function spinWheel() {
+async function spinWheel() {
     if (spinButton.disabled) return;
 
-    const wager = window.CasinoApp.getWager('betAmount');
+    const wager = await window.CasinoApp.getWager('betAmount');
     if (wager === null) return;
 
     const winningIndex = Math.floor(Math.random() * rouletteNumbers.length);
@@ -58,10 +58,10 @@ function spinWheel() {
     wheel.style.transform = `rotate(${wheelRotation}deg)`;
     ballTrack.classList.add('spinning');
 
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
         wheel.classList.remove('spinning');
         ballTrack.classList.remove('spinning');
-        const credited = payout === 0 || window.CasinoApp.payout(payout);
+        const credited = payout === 0 || await window.CasinoApp.payout(payout);
         resultDiv.textContent = payout > 0 && credited
             ? `Ruleta se zastavila na čísle ${number} (${color}). Vyhráli jste ${payout} kreditů!`
             : payout > 0

@@ -3,9 +3,9 @@ const dieFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 const rollButton = document.getElementById('rollButton');
 const diceResult = document.getElementById('result');
 
-function rollDice() {
+async function rollDice() {
     if (rollButton.disabled) return;
-    const wager = window.CasinoApp.getWager('betAmount');
+    const wager = await window.CasinoApp.getWager('betAmount');
     if (wager === null) return;
 
     rollButton.disabled = true;
@@ -14,7 +14,7 @@ function rollDice() {
     dieElements.forEach((die) => die.classList.add('rolling'));
     diceResult.textContent = 'Kostky se kutálejí…';
 
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
         const first = Math.floor(Math.random() * 6) + 1;
         const second = Math.floor(Math.random() * 6) + 1;
         const sum = first + second;
@@ -27,7 +27,7 @@ function rollDice() {
         dieElements[1].textContent = dieFaces[second - 1];
         dieElements[0].setAttribute('aria-label', `První kostka: ${first}`);
         dieElements[1].setAttribute('aria-label', `Druhá kostka: ${second}`);
-        const credited = payout === 0 || window.CasinoApp.payout(payout);
+        const credited = payout === 0 || await window.CasinoApp.payout(payout);
         diceResult.textContent = payout > 0 && credited
             ? `Padlo ${first} + ${second} = ${sum}. Vyhráli jste ${payout} kreditů!`
             : payout > 0
