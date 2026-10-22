@@ -153,6 +153,20 @@ button:disabled {
     font-size: 0.82rem;
 }
 
+.button-link {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    padding: 7px 10px;
+    border: 1px solid rgba(238, 218, 161, 0.34);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #c9a847, #a9832b);
+    color: #17160e;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
 .account-dialog {
     width: min(92vw, 460px);
     padding: 0;
@@ -312,6 +326,102 @@ button:disabled {
     color: var(--casino-muted);
     font-size: 0.9rem;
     line-height: 1.5;
+}
+
+.leaderboard-section {
+    width: min(100%, 620px);
+    margin: 54px auto 0;
+    padding: 24px;
+    border: 1px solid var(--casino-line);
+    border-radius: 16px;
+    background: var(--casino-surface);
+}
+
+.leaderboard-section h2 {
+    margin: 8px 0 18px;
+}
+
+.leaderboard-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding-left: 2.2rem;
+    text-align: left;
+}
+
+.leaderboard-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px;
+    border-bottom: 1px solid var(--casino-line);
+}
+
+.leaderboard-list li::marker {
+    color: var(--casino-gold);
+    font-weight: 700;
+}
+
+.leaderboard-list li span {
+    color: var(--casino-gold);
+    white-space: nowrap;
+}
+
+.developer-warning {
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 190, 120, 0.4);
+    border-radius: 10px;
+    background: rgba(136, 75, 30, 0.2);
+    color: #ffd18a;
+    line-height: 1.5;
+}
+
+.managed-accounts {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.managed-account {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    align-items: end;
+    gap: 14px;
+    padding: 20px;
+    border: 1px solid var(--casino-line);
+    border-radius: 14px;
+    background: var(--casino-surface);
+}
+
+.managed-account h3 {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--casino-gold);
+}
+
+.managed-account label {
+    display: grid;
+    gap: 7px;
+    color: var(--casino-muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.managed-account input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--casino-line);
+    border-radius: 9px;
+    background: #0b1912;
+    color: var(--casino-text);
+    font: inherit;
+}
+
+.managed-account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 @media (max-width: 700px) {
