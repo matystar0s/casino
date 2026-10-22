@@ -11,6 +11,7 @@
     let currentAccount = null;
     let developer = false;
     let registrationInProgress = false;
+    let accountLoadError = '';
     let accounts = [];
     let unsubscribeAccount;
     let unsubscribeAdminAccounts;
@@ -66,7 +67,11 @@
         const balance = document.createElement('span');
         balance.textContent = currentAccount
             ? `${currentAccount.balance.toLocaleString('cs-CZ')} kreditů`
-            : 'Přihlaste se nebo si vytvořte účet';
+            : accountLoadError
+                ? accountLoadError
+                : currentUser
+                    ? 'Přihlášení proběhlo, načítá se herní účet…'
+                    : 'Přihlaste se nebo si vytvořte účet';
         summary.append(name, balance);
 
         const actions = document.createElement('div');
@@ -327,7 +332,12 @@
             'auth/operation-not-allowed': 'Ve Firebase Console zapněte přihlášení e-mailem a heslem.',
             'auth/configuration-not-found': 'Firebase Authentication ještě není v projektu nastavené. Ve Firebase Console otevřete Authentication, klikněte na Get started a v Sign-in method zapněte Email/Password.',
             'auth/network-request-failed': 'Firebase se nepodařilo kontaktovat. Zkontrolujte připojení k internetu.',
-            'permission-denied': 'Firebase zamítl přístup. Zkontrolujte nasazená pravidla Firestore.'
+            'permission-denied': 'Firestore zamítl přístup. V konzoli Firebase publikujte firestore.rules a ověřte e-mail účtu.',
+            'firestore/permission-denied': 'Firestore zamítl přístup. V konzoli Firebase publikujte firestore.rules a ověřte e-mail účtu.',
+            'failed-precondition': 'Firestore není dokončené nastavení. Zkontrolujte vytvoření databáze a publikování pravidel.',
+            'firestore/failed-precondition': 'Firestore není dokončené nastavení. Zkontrolujte vytvoření databáze a publikování pravidel.',
+            'unavailable': 'Firestore není momentálně dostupné. Zkuste to znovu za chvíli.',
+            'firestore/unavailable': 'Firestore není momentálně dostupné. Zkuste to znovu za chvíli.'
         };
         return messages[error.code] || error.message || 'Operaci se nepodařilo dokončit.';
     }
@@ -380,6 +390,7 @@
     async function handleAuthState(user) {
         stopAccountListeners();
         currentUser = user;
+        accountLoadError = '';
         updatePanel();
         renderRewards();
         if (!user) return;
@@ -393,6 +404,7 @@
                 }
                 return;
             }
+            await firebase.getIdToken(user, true);
             const profile = await ensureAccount(user);
             if (profile.disabled) {
                 notify('Tento účet byl zablokován správcem.');
@@ -428,7 +440,12 @@
                 currentAccount = { id: user.uid, ...data };
                 updatePanel();
                 renderRewards();
-            }, (error) => reportError('Nepodařilo se načíst hráčský účet.', error));
+            }, (error) => {
+                console.error('Nepodařilo se načíst hráčský účet.', error);
+                accountLoadError = firebaseErrorMessage(error);
+                updatePanel();
+                notify(`Herní účet se nepodařilo načíst: ${accountLoadError}`);
+            });
 
             if (developer) {
                 await firebase.deleteDoc(firebase.doc(database, 'leaderboard', user.uid));
@@ -436,13 +453,19 @@
                 unsubscribeAdminAccounts = firebase.onSnapshot(allAccounts, (snapshot) => {
                     accounts = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
                     renderManagedAccounts();
-                }, (error) => reportError('Nepodařilo se načíst seznam účtů.', error));
+                }, (error) => {
+                    console.error('Nepodařilo se načíst seznam účtů.', error);
+                    notify(`Přístup k seznamu hráčů byl zamítnut: ${firebaseErrorMessage(error)}`);
+                });
             }
             updatePanel();
             renderRewards();
             renderManagedAccounts();
         } catch (error) {
-            reportError('Nepodařilo se načíst účet z Firebase.', error);
+            console.error('Nepodařilo se načíst účet z Firebase.', error);
+            accountLoadError = firebaseErrorMessage(error);
+            updatePanel();
+            notify(`Přihlášení proběhlo, ale účet se nepodařilo načíst: ${accountLoadError}`);
         }
     }
 

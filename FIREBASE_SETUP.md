@@ -52,6 +52,15 @@ developer email first, verify it, and add its UID to the `admins` collection.
 4. Sign out and sign in again. The account will now have access to the
    developer page and all registered account records.
 
+If Firebase reports a successful sign-in but the header still shows **Hráčský
+účet**, the profile could not be loaded or created in Firestore. Publish
+`firestore.rules`, verify the email in Firebase Authentication, and sign out
+and back in so the app refreshes the verified-email token. The header now shows
+the Firestore error to help identify the missing setup. If the header shows the
+player's name but there is no developer link, verify that the `admins` document
+ID is exactly that user's Authentication UID and that its `enabled` field is
+the boolean `true`, then sign out and in again.
+
 Only the administrator can query the private `accounts` collection. The public
 leaderboard contains player display names and credit balances, not email
 addresses. Add or remove administrator documents only through Firebase
