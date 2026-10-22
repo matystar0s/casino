@@ -325,6 +325,7 @@
             'auth/weak-password': 'Heslo musí mít alespoň 6 znaků.',
             'auth/too-many-requests': 'Příliš mnoho pokusů. Zkuste to později.',
             'auth/operation-not-allowed': 'Ve Firebase Console zapněte přihlášení e-mailem a heslem.',
+            'auth/configuration-not-found': 'Firebase Authentication ještě není v projektu nastavené. Ve Firebase Console otevřete Authentication, klikněte na Get started a v Sign-in method zapněte Email/Password.',
             'auth/network-request-failed': 'Firebase se nepodařilo kontaktovat. Zkontrolujte připojení k internetu.',
             'permission-denied': 'Firebase zamítl přístup. Zkontrolujte nasazená pravidla Firestore.'
         };

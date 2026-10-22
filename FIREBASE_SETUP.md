@@ -9,15 +9,25 @@ this repository.
 ## Enable Firebase
 
 1. In Firebase Console, open the project configured in `firebase-config.js`.
-2. In **Authentication → Sign-in method**, enable **Email/Password**.
-3. In **Authentication → Settings → Authorized domains**, add the domain where
+2. Open **Authentication** and click **Get started** if Firebase prompts you
+   to initialize Authentication.
+3. In **Authentication → Sign-in method**, open **Email/Password**, enable the
+   provider, and save. Enabling only Email link/passwordless sign-in is not
+   sufficient; the **Email/Password** provider itself must be enabled.
+4. In **Authentication → Settings → Authorized domains**, add the domain where
    the site is hosted. The site must be served over HTTPS or from localhost;
    opening the HTML files directly with `file://` does not support Firebase.
-4. Create a **Cloud Firestore** database.
-5. Open **Firestore Database → Rules**, replace the rules with `firestore.rules`,
+5. Create a **Cloud Firestore** database.
+6. Open **Firestore Database → Rules**, replace the rules with `firestore.rules`,
    and publish them.
-6. Deploy the static website. Firebase Authentication sends verification links
+7. Deploy the static website. Firebase Authentication sends verification links
    to new players before their shared account is created.
+
+If login displays `auth/configuration-not-found`, Authentication has not been
+initialized for the Firebase project or its email/password sign-in provider is
+not enabled. Confirm the project ID matches `firebase-config.js`, finish
+**Authentication → Get started**, then enable and save **Email/Password** in
+**Sign-in method**. Wait briefly and refresh the casino before trying again.
 
 ## Set up the root account
 
