@@ -500,6 +500,22 @@ button:disabled {
     min-height: 20px;
 }
 
+@media (max-width: 900px) {
+    main {
+        width: min(100% - 32px, 1080px);
+    }
+
+    .games {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    }
+
+    .game {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
 @media (max-width: 700px) {
     body > header {
         align-items: flex-start;
@@ -528,6 +544,161 @@ button:disabled {
 
     main {
         width: min(100% - 24px, 1080px);
+    }
+
+    .game-options {
+        width: min(100%, 420px);
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .game-options .field {
+        width: 100%;
+    }
+
+    .leaderboard-section {
+        padding: 20px 16px;
+    }
+
+    .leaderboard-list {
+        padding-left: 1.8rem;
+    }
+
+    .leaderboard-list li {
+        min-width: 0;
+        align-items: flex-start;
+        gap: 8px;
+        overflow-wrap: anywhere;
+    }
+
+    .leaderboard-list li span {
+        flex: 0 0 auto;
+    }
+
+    .managed-account {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 16px;
+    }
+
+    .managed-account-actions > button {
+        flex: 1 1 140px;
+    }
+
+    .account-dialog {
+        max-height: min(90vh, 48rem);
+        max-height: min(90dvh, 48rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .account-form {
+        padding: 28px 20px 20px;
+    }
+
+    .casino-toast {
+        right: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        max-width: calc(100vw - 24px);
+    }
+}
+
+@media (max-width: 420px) {
+    body > header {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+
+    main {
+        width: calc(100% - 24px);
+        padding-top: 28px;
+    }
+
+    .account-panel {
+        gap: 8px;
+    }
+
+    .account-actions {
+        gap: 6px;
+    }
+
+    .account-actions button,
+    .account-actions .button-link {
+        min-height: 40px;
+    }
+
+    .games {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .game {
+        padding: 16px;
+    }
+
+    .game:hover {
+        transform: none;
+    }
+
+    .slot-machine {
+        width: min(calc(100vw - 32px), 430px);
+        padding: 14px 10px;
+        border-width: 5px;
+        border-radius: 20px;
+    }
+
+    .reels {
+        gap: 5px;
+        padding: 8px;
+        border-width: 3px;
+    }
+
+    .reel {
+        width: min(24vw, 100px);
+        min-width: 0;
+        height: clamp(82px, 28vw, 116px);
+        flex: 1 1 0;
+    }
+
+    .reel-symbol {
+        font-size: clamp(2rem, 11vw, 4.5rem);
+    }
+
+    .slot-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .slot-controls button,
+    .blackjack-buttons button,
+    .mini-game-controls button,
+    main > #spinButton {
+        width: min(100%, 360px);
+    }
+
+    .roulette {
+        width: min(78vw, 340px);
+    }
+
+    .leaderboard-section {
+        margin-top: 36px;
+        padding: 18px 12px;
+    }
+
+    .reward-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    footer,
+    body > footer {
+        padding: 14px 16px max(14px, env(safe-area-inset-bottom));
+    }
+}
+
+@media (hover: none) {
+    button:hover:not(:disabled),
+    .game:hover {
+        transform: none;
+        box-shadow: none;
     }
 }
 
