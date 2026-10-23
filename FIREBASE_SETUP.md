@@ -66,6 +66,15 @@ leaderboard contains player display names and credit balances, not email
 addresses. Add or remove administrator documents only through Firebase
 Console. The rules intentionally deny client writes to the `admins` collection.
 
+## Player feedback
+
+Verified, signed-in player accounts can submit a bug report or improvement
+suggestion from the form on the home page. Feedback is stored in the private
+`feedback` collection and is readable only by an enabled administrator. Open
+**Správa účtů** while signed in as root to review the latest 200 messages and
+change each message's status. Publish the current `firestore.rules` for these
+permissions and status updates to take effect.
+
 The seven daily rewards are 100, 200, 300, 400, 500, 600, and 1,000 credits.
 The first is available as soon as the verified account is created; later
 rewards unlock 24 hours after the previous claim. Every reward card displays

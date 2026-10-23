@@ -17,6 +17,11 @@
         <h2>Hráčské účty</h2>
         <p class="dialog-note">Zde se zobrazují účty uložené ve sdílené databázi Firebase. Můžete upravit herní jméno, zůstatek nebo přístup hráče.</p>
         <p class="developer-warning">Přístup ke správě ověřují pravidla Firestore. Herní kredity jsou pouze testovací; výsledky her stále počítá prohlížeč.</p>
+        <section class="feedback-admin-section" aria-labelledby="feedbackAdminTitle">
+            <h2 id="feedbackAdminTitle">Hlášení chyb a návrhy</h2>
+            <p class="dialog-note">Zobrazuje se posledních 200 zpráv. Můžete aktualizovat jejich stav.</p>
+            <div id="feedbackList" class="managed-feedback" aria-live="polite"></div>
+        </section>
         <div id="accountList" class="managed-accounts" aria-live="polite"></div>
     </main>
     <footer>

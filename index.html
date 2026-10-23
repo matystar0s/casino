@@ -65,6 +65,29 @@
             <p class="dialog-note">První odměna je dostupná hned. Další se otevírají každých 24 hodin.</p>
             <div id="dailyRewards" aria-live="polite"></div>
         </section>
+        <section class="leaderboard-section feedback-section" aria-labelledby="feedbackTitle">
+            <p class="eyebrow">Pomozte nám kasino vylepšit</p>
+            <h2 id="feedbackTitle">Nahlásit chybu nebo navrhnout novinku</h2>
+            <p class="dialog-note">Zprávy uvidí pouze správce. Pro odeslání se přihlaste ke svému ověřenému účtu.</p>
+            <form id="feedbackForm" class="feedback-form">
+                <label class="field" for="feedbackType">
+                    <span>Typ zprávy</span>
+                    <select id="feedbackType" name="type" required>
+                        <option value="bug">Nahlášení chyby</option>
+                        <option value="suggestion">Návrh na vylepšení</option>
+                    </select>
+                </label>
+                <label class="field" for="feedbackTitleInput">
+                    <span>Nadpis</span>
+                    <input id="feedbackTitleInput" name="title" type="text" maxlength="100" required>
+                </label>
+                <label class="field" for="feedbackDetails">
+                    <span>Popis</span>
+                    <textarea id="feedbackDetails" name="details" rows="5" maxlength="1500" required></textarea>
+                </label>
+                <button type="submit">Odeslat zprávu</button>
+            </form>
+        </section>
         <p class="responsible-note">Všechny hry používají pouze testovací kredity v prohlížeči. Nejde o skutečné peníze ani skutečné kasino.</p>
     </main>
     <footer>
@@ -72,5 +95,6 @@
     </footer>
     <script src="firebase-config.js"></script>
     <script type="module" src="casino.js"></script>
+    <script type="module" src="feedback.js"></script>
 </body>
 </html>

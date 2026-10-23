@@ -13,8 +13,10 @@
     let registrationInProgress = false;
     let accountLoadError = '';
     let accounts = [];
+    let feedback = [];
     let unsubscribeAccount;
     let unsubscribeAdminAccounts;
+    let unsubscribeFeedback;
     let rewardTimer;
     let dialog;
     let resolveReady;
@@ -224,6 +226,10 @@
         document.dispatchEvent(new CustomEvent('casino:accounts-changed'));
     }
 
+    function renderManagedFeedback() {
+        document.dispatchEvent(new CustomEvent('casino:feedback-changed'));
+    }
+
     function openDialog() {
         if (!dialog) {
             dialog = document.createElement('dialog');
@@ -395,12 +401,16 @@
     function stopAccountListeners() {
         if (unsubscribeAccount) unsubscribeAccount();
         if (unsubscribeAdminAccounts) unsubscribeAdminAccounts();
+        if (unsubscribeFeedback) unsubscribeFeedback();
         unsubscribeAccount = null;
         unsubscribeAdminAccounts = null;
+        unsubscribeFeedback = null;
         currentAccount = null;
         accounts = [];
+        feedback = [];
         developer = false;
         renderManagedAccounts();
+        renderManagedFeedback();
     }
 
     async function handleAuthState(user) {
@@ -472,6 +482,18 @@
                 }, (error) => {
                     console.error('Nepodařilo se načíst seznam účtů.', error);
                     notify(`Přístup k seznamu hráčů byl zamítnut: ${firebaseErrorMessage(error)}`);
+                });
+                const feedbackQuery = firebase.query(
+                    firebase.collection(database, 'feedback'),
+                    firebase.orderBy('createdAt', 'desc'),
+                    firebase.limit(200)
+                );
+                unsubscribeFeedback = firebase.onSnapshot(feedbackQuery, (snapshot) => {
+                    feedback = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+                    renderManagedFeedback();
+                }, (error) => {
+                    console.error('Nepodařilo se načíst návrhy a hlášení.', error);
+                    notify(`Hlášení a návrhy se nepodařilo načíst: ${firebaseErrorMessage(error)}`);
                 });
             }
             updatePanel();
@@ -625,6 +647,63 @@
         }
     }
 
+    async function submitFeedback(type, title, details) {
+        if (!await waitUntilReady()) return false;
+        if (!currentUser || !currentAccount || developer) {
+            notify('Pro odeslání hlášení nebo návrhu se přihlaste hráčským účtem.');
+            return false;
+        }
+        const cleanTitle = typeof title === 'string' ? title.trim() : '';
+        const cleanDetails = typeof details === 'string' ? details.trim() : '';
+        if (!['bug', 'suggestion'].includes(type) ||
+            !cleanTitle || cleanTitle.length > 100 ||
+            !cleanDetails || cleanDetails.length > 1500) {
+            notify('Zkontrolujte typ, nadpis (do 100 znaků) a popis (do 1 500 znaků).');
+            return false;
+        }
+        try {
+            await firebase.addDoc(firebase.collection(database, 'feedback'), {
+                uid: currentUser.uid,
+                name: currentAccount.name,
+                type,
+                title: cleanTitle,
+                details: cleanDetails,
+                status: 'new',
+                createdAt: firebase.serverTimestamp()
+            });
+            notify('Děkujeme, zpráva byla odeslána.');
+            return true;
+        } catch (error) {
+            reportError('Nepodařilo se odeslat hlášení nebo návrh.', error);
+            return false;
+        }
+    }
+
+    function managedFeedback() {
+        return feedback.map(({ id, ...entry }) => ({ id, ...entry }));
+    }
+
+    async function updateFeedbackStatus(id, status) {
+        if (!await waitUntilReady()) return false;
+        if (!developer) {
+            notify('Tuto akci může provést pouze správce.');
+            return false;
+        }
+        if (!feedback.some((entry) => entry.id === id) ||
+            !['new', 'reviewing', 'resolved', 'declined'].includes(status)) {
+            notify('Neplatný stav hlášení.');
+            return false;
+        }
+        try {
+            await firebase.updateDoc(firebase.doc(database, 'feedback', id), { status });
+            notify('Stav zprávy byl aktualizován.');
+            return true;
+        } catch (error) {
+            reportError('Stav zprávy se nepodařilo změnit.', error);
+            return false;
+        }
+    }
+
     function startFirebase() {
         const config = window.CASINO_FIREBASE_CONFIG;
         if (!config || !config.apiKey || !config.projectId || !config.appId) {
@@ -665,7 +744,10 @@
         isDeveloper,
         managedAccounts,
         updateManagedAccount,
-        claimReward
+        claimReward,
+        submitFeedback,
+        managedFeedback,
+        updateFeedbackStatus
     };
 
     startFirebase().catch((error) => {
