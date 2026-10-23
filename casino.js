@@ -647,6 +647,42 @@
         }
     }
 
+    async function adjustManagedBalance(id, amount) {
+        if (!await waitUntilReady()) return false;
+        if (!developer) {
+            notify('Tuto akci může provést pouze správce.');
+            return false;
+        }
+        if (!Number.isSafeInteger(amount) || amount === 0) {
+            notify('Zadejte platnou změnu kreditů.');
+            return false;
+        }
+        const accountRef = firebase.doc(database, 'accounts', id);
+        const leaderboardRef = firebase.doc(database, 'leaderboard', id);
+        try {
+            await firebase.runTransaction(database, async (transaction) => {
+                const snapshot = await transaction.get(accountRef);
+                if (!snapshot.exists()) throw new Error('Hráčský účet nebyl nalezen.');
+                const account = snapshot.data();
+                const balance = account.balance + amount;
+                if (!Number.isSafeInteger(balance) || balance < 0) {
+                    throw new Error('Zůstatek nemůže být záporný ani překročit povolený limit.');
+                }
+                transaction.update(accountRef, { balance });
+                if (account.disabled) {
+                    transaction.delete(leaderboardRef);
+                } else {
+                    transaction.set(leaderboardRef, { name: account.name, balance });
+                }
+            });
+            notify(`${amount > 0 ? 'Připsáno' : 'Odečteno'} ${Math.abs(amount).toLocaleString('cs-CZ')} kreditů.`);
+            return true;
+        } catch (error) {
+            reportError('Kredity se nepodařilo upravit.', error);
+            return false;
+        }
+    }
+
     async function submitFeedback(type, title, details) {
         if (!await waitUntilReady()) return false;
         if (!currentUser || !currentAccount || developer) {
@@ -744,6 +780,7 @@
         isDeveloper,
         managedAccounts,
         updateManagedAccount,
+        adjustManagedBalance,
         claimReward,
         submitFeedback,
         managedFeedback,

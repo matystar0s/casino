@@ -52,7 +52,13 @@ developer email first, verify it, and add its UID to the `admins` collection.
 4. Sign out and sign in again. The account will now have access to the
    developer page and all registered account records.
 
-If Firebase reports a successful sign-in but the header still shows **Hráčský
+   The developer page includes an account overview, account search/status filters,
+   sorting, and a CSV export of account names, email addresses, balances, status,
+   and registration dates. The quick balance controls apply or remove 100 credits
+   or add 1,000 credits; the account's balance and public leaderboard are updated
+   together. Feedback can be searched and filtered by type and status.
+
+   If Firebase reports a successful sign-in but the header still shows **Hráčský
 účet**, the profile could not be loaded or created in Firestore. Publish
 `firestore.rules`, verify the email in Firebase Authentication, and sign out
 and back in so the app refreshes the verified-email token. The header now shows

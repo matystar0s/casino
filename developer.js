@@ -10,6 +10,13 @@
 
     const accountList = document.getElementById('accountList');
     const feedbackList = document.getElementById('feedbackList');
+    const adminStats = document.getElementById('adminStats');
+    const accountSearch = document.getElementById('accountSearch');
+    const accountFilter = document.getElementById('accountFilter');
+    const accountSort = document.getElementById('accountSort');
+    const feedbackSearch = document.getElementById('feedbackSearch');
+    const feedbackTypeFilter = document.getElementById('feedbackTypeFilter');
+    const feedbackStatusFilter = document.getElementById('feedbackStatusFilter');
 
     const feedbackStatuses = [
         ['new', 'Nové'],
@@ -18,13 +25,56 @@
         ['declined', 'Zamítnuto']
     ];
 
+    function renderStats() {
+        const accounts = window.CasinoApp.managedAccounts();
+        const entries = window.CasinoApp.managedFeedback();
+        const totalCredits = accounts.reduce((sum, account) => {
+            if (!Number.isSafeInteger(account.balance) || account.balance < 0) return sum;
+            return sum + BigInt(account.balance);
+        }, 0n);
+        const stats = [
+            ['Účty celkem', accounts.length.toLocaleString('cs-CZ')],
+            ['Aktivní účty', accounts.filter((account) => account.disabled !== true).length.toLocaleString('cs-CZ')],
+            ['Zablokované účty', accounts.filter((account) => account.disabled === true).length.toLocaleString('cs-CZ')],
+            ['Kredity v účtech', totalCredits.toLocaleString('cs-CZ')],
+            ['Nové zprávy z posledních 200', entries.filter((entry) => entry.status === 'new').length.toLocaleString('cs-CZ')]
+        ];
+        adminStats.replaceChildren();
+        stats.forEach(([label, value]) => {
+            const card = document.createElement('article');
+            card.className = 'admin-stat-card';
+            const number = document.createElement('strong');
+            number.textContent = value;
+            const caption = document.createElement('span');
+            caption.textContent = label;
+            card.append(number, caption);
+            adminStats.append(card);
+        });
+    }
+
+    function filterFeedback(entries) {
+        const search = feedbackSearch.value.trim().toLocaleLowerCase('cs-CZ');
+        const type = feedbackTypeFilter.value;
+        const status = feedbackStatusFilter.value;
+        return entries.filter((entry) => {
+            const matchesType = type === 'all' || entry.type === type;
+            const matchesStatus = status === 'all' || entry.status === status;
+            const searchable = `${entry.title} ${entry.details} ${entry.name}`.toLocaleLowerCase('cs-CZ');
+            return matchesType && matchesStatus && (!search || searchable.includes(search));
+        });
+    }
+
     function renderFeedback() {
         feedbackList.replaceChildren();
-        const entries = window.CasinoApp.managedFeedback();
+        const entries = filterFeedback(window.CasinoApp.managedFeedback());
         if (!entries.length) {
             const empty = document.createElement('p');
             empty.className = 'dialog-note';
-            empty.textContent = 'Zatím nebyla odeslána žádná hlášení ani návrhy.';
+            const hasFilters = feedbackSearch.value || feedbackTypeFilter.value !== 'all' ||
+                feedbackStatusFilter.value !== 'all';
+            empty.textContent = hasFilters
+                ? 'Žádné zprávy neodpovídají zvolenému filtru.'
+                : 'Zatím nebyla odeslána žádná hlášení ani návrhy.';
             feedbackList.append(empty);
             return;
         }
@@ -82,13 +132,38 @@
         });
     }
 
+    function filteredAccounts() {
+        const search = accountSearch.value.trim().toLocaleLowerCase('cs-CZ');
+        const filter = accountFilter.value;
+        const sort = accountSort.value;
+        return window.CasinoApp.managedAccounts()
+            .filter((account) => {
+                const matchesStatus = filter === 'all' ||
+                    (filter === 'disabled' ? account.disabled === true : account.disabled !== true);
+                const searchable = `${account.name} ${account.email}`.toLocaleLowerCase('cs-CZ');
+                return matchesStatus && (!search || searchable.includes(search));
+            })
+            .sort((first, second) => {
+                if (sort === 'name') return first.name.localeCompare(second.name, 'cs');
+                if (sort === 'created') {
+                    const firstDate = first.createdAt?.toMillis?.() || 0;
+                    const secondDate = second.createdAt?.toMillis?.() || 0;
+                    return secondDate - firstDate;
+                }
+                return second.balance - first.balance;
+            });
+    }
+
     function renderAccounts() {
         accountList.replaceChildren();
-        const accounts = window.CasinoApp.managedAccounts();
+        const accounts = filteredAccounts();
         if (!accounts.length) {
             const empty = document.createElement('p');
             empty.className = 'dialog-note';
-            empty.textContent = 'Zatím nejsou vytvořené žádné účty hráčů.';
+            const hasFilters = accountSearch.value || accountFilter.value !== 'all';
+            empty.textContent = hasFilters
+                ? 'Žádné účty neodpovídají zvolenému vyhledávání nebo filtru.'
+                : 'Zatím nejsou vytvořené žádné účty hráčů.';
             accountList.append(empty);
             return;
         }
@@ -151,6 +226,25 @@
 
             const actions = document.createElement('div');
             actions.className = 'managed-account-actions';
+            [
+                [-100, '−100 kreditů'],
+                [100, '+100 kreditů'],
+                [1000, '+1 000 kreditů']
+            ].forEach(([amount, text]) => {
+                const adjustButton = document.createElement('button');
+                adjustButton.type = 'button';
+                adjustButton.className = 'button-secondary';
+                adjustButton.textContent = text;
+                adjustButton.addEventListener('click', async () => {
+                    adjustButton.disabled = true;
+                    try {
+                        await window.CasinoApp.adjustManagedBalance(account.id, amount);
+                    } finally {
+                        adjustButton.disabled = false;
+                    }
+                });
+                actions.append(adjustButton);
+            });
             const saveButton = document.createElement('button');
             saveButton.type = 'submit';
             saveButton.textContent = 'Uložit změny';
@@ -160,8 +254,50 @@
         });
     }
 
-    document.addEventListener('casino:feedback-changed', renderFeedback);
-    document.addEventListener('casino:accounts-changed', renderAccounts);
+    function exportAccounts() {
+        const accounts = window.CasinoApp.managedAccounts();
+        const escapeCell = (value) => {
+            let text = String(value ?? '');
+            if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+            return `"${text.replaceAll('"', '""')}"`;
+        };
+        const rows = [
+            ['Jméno', 'E-mail', 'Kredity', 'Stav účtu', 'Registrace'],
+            ...accounts.map((account) => [
+                account.name,
+                account.email,
+                account.balance,
+                account.disabled === true ? 'Zablokovaný' : 'Aktivní',
+                account.createdAt?.toDate?.().toISOString() || ''
+            ])
+        ];
+        const csv = `\uFEFF${rows.map((row) => row.map(escapeCell).join(';')).join('\r\n')}`;
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `casino-ucty-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    [accountSearch, accountFilter, accountSort].forEach((control) => {
+        control.addEventListener(control === accountSearch ? 'input' : 'change', renderAccounts);
+    });
+    [feedbackSearch, feedbackTypeFilter, feedbackStatusFilter].forEach((control) => {
+        control.addEventListener(control === feedbackSearch ? 'input' : 'change', renderFeedback);
+    });
+    document.getElementById('exportAccounts').addEventListener('click', exportAccounts);
+    document.addEventListener('casino:feedback-changed', () => {
+        renderStats();
+        renderFeedback();
+    });
+    document.addEventListener('casino:accounts-changed', () => {
+        renderStats();
+        renderAccounts();
+    });
+    renderStats();
     renderFeedback();
     renderAccounts();
 })().catch((error) => {
