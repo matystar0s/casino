@@ -1,0 +1,425 @@
+.plinko-page {
+    width: min(100% - 32px, 1120px);
+}
+
+.back-link {
+    display: inline-flex;
+    margin-bottom: 26px;
+    color: var(--casino-muted);
+    font-size: 0.92rem;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--casino-gold);
+}
+
+.plinko-intro {
+    max-width: 700px;
+    margin: 0 auto 34px;
+    text-align: center;
+}
+
+.plinko-intro h2 {
+    margin: 10px 0;
+    color: var(--casino-text);
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    letter-spacing: -0.045em;
+}
+
+.plinko-intro h2 span {
+    color: var(--casino-gold);
+}
+
+.plinko-intro > p:last-child {
+    max-width: 580px;
+    margin: 0 auto;
+    color: var(--casino-muted);
+    line-height: 1.65;
+}
+
+.plinko-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(270px, 0.8fr);
+    align-items: start;
+    gap: 20px;
+}
+
+.plinko-board-card,
+.plinko-controls {
+    min-width: 0;
+    border: 1px solid var(--casino-line);
+    border-radius: 20px;
+    background:
+        radial-gradient(ellipse at 50% 20%, rgba(40, 110, 78, 0.2), transparent 70%),
+        var(--casino-surface);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.2);
+}
+
+.plinko-board-card {
+    padding: clamp(14px, 3vw, 26px);
+    overflow: hidden;
+}
+
+.plinko-board-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.plinko-board-heading h3 {
+    margin: 5px 0 0;
+    color: var(--casino-text);
+    font-size: 1.15rem;
+}
+
+.risk-indicator {
+    padding: 7px 10px;
+    border: 1px solid var(--casino-line);
+    border-radius: 999px;
+    color: var(--casino-gold);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.plinko-board-wrap {
+    width: min(100%, 520px);
+    margin: 0 auto;
+}
+
+#plinkoBoard {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 52 / 37;
+}
+
+.plinko-slots {
+    display: grid;
+    width: min(100%, 520px);
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0 auto;
+}
+
+.plinko-slot {
+    display: grid;
+    min-height: 34px;
+    place-items: center;
+    border: 1px solid rgba(220, 190, 115, 0.18);
+    border-radius: 7px;
+    background: #193428;
+    color: var(--casino-muted);
+    font-size: clamp(0.62rem, 1.5vw, 0.8rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.plinko-slot[data-edge="0"],
+.plinko-slot[data-edge="1"] {
+    background: linear-gradient(150deg, #78502a, #4a321d);
+    color: #ffe29a;
+}
+
+.plinko-slot[data-edge="2"] {
+    background: linear-gradient(150deg, #276d55, #194332);
+    color: #c4f0d8;
+}
+
+.plinko-slot[data-edge="3"] {
+    background: #193c30;
+    color: #d4e7d9;
+}
+
+.plinko-result {
+    min-height: 3em;
+    margin: 18px 0 0;
+    color: var(--casino-gold);
+    font-size: clamp(0.96rem, 2vw, 1.15rem);
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.plinko-controls {
+    display: grid;
+    gap: 20px;
+    padding: 22px;
+    text-align: left;
+}
+
+.plinko-control-section {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.plinko-control-section > label,
+.plinko-control-section > legend {
+    padding: 0;
+    color: var(--casino-text);
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.plinko-bet-input {
+    position: relative;
+}
+
+.plinko-bet-input input {
+    width: 100%;
+    min-height: 52px;
+    padding: 12px 78px 12px 14px;
+    border: 1px solid var(--casino-line);
+    border-radius: 10px;
+    background: #0b1912;
+    color: var(--casino-text);
+    font: inherit;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.plinko-bet-input > span {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    color: var(--casino-muted);
+    font-size: 0.8rem;
+    transform: translateY(-50%);
+}
+
+.bet-presets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.bet-presets button {
+    min-height: 38px;
+    padding: 6px;
+    border-color: var(--casino-line);
+    background: var(--casino-raised);
+    color: var(--casino-text);
+    font-size: 0.82rem;
+}
+
+.risk-options {
+    gap: 8px;
+}
+
+.risk-choice {
+    display: flex;
+    min-height: 62px;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--casino-line);
+    border-radius: 10px;
+    background: rgba(9, 21, 16, 0.48);
+    cursor: pointer;
+}
+
+.risk-choice:has(input:checked) {
+    border-color: rgba(231, 200, 117, 0.75);
+    background: rgba(231, 200, 117, 0.08);
+}
+
+.risk-choice input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--casino-gold);
+}
+
+.risk-choice > span:nth-of-type(1) {
+    display: grid;
+    flex: 1;
+    gap: 3px;
+}
+
+.risk-choice strong {
+    color: var(--casino-text);
+    font-size: 0.88rem;
+}
+
+.risk-choice small {
+    color: var(--casino-muted);
+    font-size: 0.75rem;
+}
+
+.risk-dots {
+    color: var(--casino-gold);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+}
+
+.plinko-drop-button {
+    display: flex;
+    width: 100%;
+    min-height: 54px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #f1d887, #c49b42);
+    font-size: 1rem;
+}
+
+.plinko-drop-button span {
+    font-size: 1.2rem;
+}
+
+.plinko-disclaimer {
+    margin: -10px 0 0;
+    color: var(--casino-muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.plinko-session {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--casino-line);
+}
+
+.plinko-session span {
+    display: grid;
+    gap: 5px;
+    color: var(--casino-muted);
+    font-size: 0.78rem;
+}
+
+.plinko-session strong {
+    color: var(--casino-text);
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.plinko-session strong.positive {
+    color: #77d8a0;
+}
+
+.plinko-session strong.negative {
+    color: #ed8c84;
+}
+
+.plinko-history-section {
+    margin: 48px 0 0;
+}
+
+.plinko-history-section .section-heading h2 {
+    margin: 6px 0 18px;
+}
+
+.plinko-history {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.plinko-history li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 16px;
+    border: 1px solid var(--casino-line);
+    border-radius: 10px;
+    background: var(--casino-surface);
+    color: var(--casino-muted);
+    font-size: 0.86rem;
+}
+
+.plinko-history li strong {
+    color: var(--casino-text);
+    text-align: right;
+}
+
+.plinko-history .history-win strong {
+    color: #77d8a0;
+}
+
+.plinko-history .history-loss strong {
+    color: #ed8c84;
+}
+
+.plinko-history .plinko-history-empty {
+    justify-content: center;
+    border-style: dashed;
+    text-align: center;
+}
+
+@media (max-width: 780px) {
+    .plinko-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .plinko-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+
+    .plinko-control-section:first-child {
+        grid-column: 1;
+    }
+
+    .risk-options {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
+
+    .plinko-drop-button,
+    .plinko-session {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 520px) {
+    .plinko-page {
+        width: calc(100% - 24px);
+    }
+
+    .plinko-intro {
+        margin-bottom: 24px;
+    }
+
+    .plinko-board-card {
+        padding: 12px 8px;
+        border-radius: 15px;
+    }
+
+    .plinko-slot {
+        min-height: 29px;
+        border-radius: 5px;
+        font-size: 0.6rem;
+    }
+
+    .plinko-controls {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .plinko-control-section:first-child,
+    .risk-options,
+    .plinko-drop-button,
+    .plinko-session {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .plinko-history li {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .plinko-history li strong {
+        text-align: left;
+    }
+}

@@ -10,13 +10,49 @@
 </head>
 <body>
     <header class="site-header">
-        <h1>Kasino pro zábavu</h1>
+        <a class="brand-link" href="index.html" aria-label="Kasino pro zábavu – úvodní stránka">
+            <span class="brand-mark" aria-hidden="true">K</span>
+            <h1>Kasino <span>pro zábavu</span></h1>
+        </a>
         <div id="casinoAccount" class="account-panel"></div>
     </header>
-    <main>
+    <main class="home-page">
+        <section class="home-hero" aria-labelledby="homeTitle">
+            <div class="hero-copy">
+                <p class="eyebrow"><span class="live-dot"></span> Herní zóna · pouze demo kredity</p>
+                <h2 id="homeTitle">Každý hod.<br><span>Nový příběh.</span></h2>
+                <p>Roztoč kolo, zkus štěstí u stolu nebo pošli kuličku plinkem. Vyber si hru a užij si napětí — bez skutečných peněz.</p>
+                <div class="hero-actions">
+                    <a class="hero-button" href="#games">Vybrat hru <span aria-hidden="true">↓</span></a>
+                    <a class="hero-link" href="plinko.html">Zkusit Plinko <span aria-hidden="true">↗</span></a>
+                </div>
+                <div class="hero-proof">
+                    <span><strong>6</strong> her k vyzkoušení</span>
+                    <span><strong>0 Kč</strong> skutečné riziko</span>
+                    <span><strong>100%</strong> pro zábavu</span>
+                </div>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+                <div class="hero-orbit orbit-one"></div>
+                <div class="hero-orbit orbit-two"></div>
+                <div class="hero-chip chip-one">♠</div>
+                <div class="hero-chip chip-two">7</div>
+                <div class="hero-chip chip-three">♦</div>
+                <div class="hero-center">★</div>
+            </div>
+        </section>
         <p class="eyebrow">Vítejte u herního stolu</p>
         <h2>Vyberte si svou hru</h2>
-        <div class="games">
+        <div class="games" id="games">
+            <div class="game game-featured">
+                <a href="plinko.html">
+                    <div class="game-icon">◈</div>
+                    <span class="game-tag">NOVINKA</span>
+                    <h3>Plinko</h3>
+                    <p class="game-description">Pusť kuličku mezi kolíky a sleduj, kam tě dovede.</p>
+                    <span class="game-arrow" aria-hidden="true">↗</span>
+                </a>
+            </div>
             <div class="game">
                 <a href="ruleta.html">
                     <div class="game-icon">🎡</div>
