@@ -60,15 +60,23 @@
     }
 
     function renderFlight(multiplier) {
-        const progress = crashMultiplier <= 1
-            ? 0
-            : Math.min((multiplier - 1) / (crashMultiplier - 1), 1);
+        const logCrash = Math.log(Math.max(crashMultiplier, 1.01));
+        const progress = Math.min(Math.log(Math.max(multiplier, 1)) / logCrash, 1);
+        const pointCount = Math.max(1, Math.ceil(progress * 36));
+        const points = Array.from({ length: pointCount + 1 }, (_, index) => {
+            const timeProgress = progress * index / pointCount;
+            const valueProgress = (Math.exp(logCrash * timeProgress) - 1) /
+                (Math.exp(logCrash) - 1);
+            const x = 56 + timeProgress * 674;
+            const y = 310 - valueProgress * 260;
+            return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+        });
         const x = 56 + progress * 674;
-        const y = 310 - Math.pow(progress, 1.55) * 260;
-        const path = `M56 310 Q${56 + progress * 300} ${310 - Math.pow(progress, 1.55) * 100} ${x} ${y}`;
+        const y = 310 - ((multiplier - 1) / (crashMultiplier - 1)) * 260;
+        const path = points.join(' ');
         flightPath.setAttribute('d', path);
         areaPath.setAttribute('d', `${path} L${x} 310 Z`);
-        ship.setAttribute('transform', `translate(${x} ${y}) rotate(-${22 + progress * 22})`);
+        ship.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(-${22 + progress * 22})`);
     }
 
     function formatCredits(amount) {
@@ -93,7 +101,10 @@
     }
 
     function updateMultiplier(timestamp) {
-        currentMultiplier = Math.exp(Math.max(0, timestamp - startedAt) / 1000 * GROWTH_RATE);
+        currentMultiplier = Math.min(
+            Math.exp(Math.max(0, timestamp - startedAt) / 1000 * GROWTH_RATE),
+            crashMultiplier
+        );
         multiplierDisplay.textContent = `${currentMultiplier.toFixed(2)}×`;
         renderFlight(currentMultiplier);
         const cashout = Math.floor(wager * currentMultiplier);
@@ -157,9 +168,7 @@
             cashoutButton.querySelector('strong').textContent = `${formatCredits(wager)} kr · 1.00×`;
             messageDisplay.textContent = 'Raketa letí! Vyber výhru kdykoliv před pádem.';
             setStatus('Let probíhá', 'flying');
-            flightPath.setAttribute('d', 'M56 310H56');
-            areaPath.setAttribute('d', 'M56 310H56V310Z');
-            ship.setAttribute('transform', 'translate(56 310) rotate(-22)');
+            renderFlight(1);
             frameId = window.requestAnimationFrame(tick);
         } catch (error) {
             console.error('Nepodařilo se odstartovat raketu.', error);
