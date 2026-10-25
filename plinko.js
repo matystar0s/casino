@@ -149,13 +149,15 @@
 
     function makePath() {
         let position = 0;
-        const path = [{ x: WIDTH / 2, y: 13 }, pegPosition(0, 0)];
+        const path = [{ x: WIDTH / 2, y: 13 }];
         for (let step = 0; step < ROWS; step += 1) {
             position += Math.random() < 0.5 ? 0 : 1;
-            path.push(step < ROWS - 1
-                ? pegPosition(step + 1, position)
-                : slotPosition(position));
+            const peg = pegPosition(step, position);
+            const side = Math.random() < 0.5 ? -1 : 1;
+            path.push({ x: peg.x + side * 15, y: peg.y - 12 });
+            path.push({ x: peg.x + side * 15, y: peg.y + 10 });
         }
+        path.push(slotPosition(position));
         return { path, position };
     }
 

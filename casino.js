@@ -354,8 +354,8 @@
             'auth/operation-not-allowed': 'Ve Firebase Console zapněte přihlášení e-mailem a heslem.',
             'auth/configuration-not-found': 'Firebase Authentication ještě není v projektu nastavené. Ve Firebase Console otevřete Authentication, klikněte na Get started a v Sign-in method zapněte Email/Password.',
             'auth/network-request-failed': 'Firebase se nepodařilo kontaktovat. Zkontrolujte připojení k internetu.',
-            'permission-denied': 'Firestore zamítl přístup. V konzoli Firebase publikujte firestore.rules a ověřte e-mail účtu.',
-            'firestore/permission-denied': 'Firestore zamítl přístup. V konzoli Firebase publikujte firestore.rules a ověřte e-mail účtu.',
+            'permission-denied': 'Firebase odmítl přístup. Ve Firestore publikujte aktuální firestore.rules a ověřte, že jste přihlášení ověřeným hráčským účtem.',
+            'firestore/permission-denied': 'Firebase odmítl přístup. Ve Firestore publikujte aktuální firestore.rules a ověřte, že jste přihlášení ověřeným hráčským účtem.',
             'failed-precondition': 'Firestore není dokončené nastavení. Zkontrolujte vytvoření databáze a publikování pravidel.',
             'firestore/failed-precondition': 'Firestore není dokončené nastavení. Zkontrolujte vytvoření databáze a publikování pravidel.',
             'unavailable': 'Firestore není momentálně dostupné. Zkuste to znovu za chvíli.',
@@ -710,7 +710,8 @@
             notify('Děkujeme, zpráva byla odeslána.');
             return true;
         } catch (error) {
-            reportError('Nepodařilo se odeslat hlášení nebo návrh.', error);
+            console.error('Nepodařilo se odeslat hlášení nebo návrh.', error);
+            notify(firebaseErrorMessage(error));
             return false;
         }
     }

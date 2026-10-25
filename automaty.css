@@ -80,6 +80,8 @@ button:disabled {
     width: min(24vw, 100px);
     height: min(28vw, 116px);
     min-height: 82px;
+    min-width: 0;
+    flex: 1 1 0;
     place-items: center;
     overflow: hidden;
     border: 3px solid #eee5d0;
@@ -90,8 +92,12 @@ button:disabled {
 
 .reel-symbol {
     display: block;
-    font-size: clamp(2.6rem, 12vw, 4.5rem);
+    font-size: clamp(1.55rem, 7vw, 3.25rem);
     line-height: 1;
+}
+
+.reel:nth-child(even) {
+    background: linear-gradient(90deg, #d6cfbe, #f8f5e9 18%, #f8f5e9 82%, #d6cfbe);
 }
 
 .reel.spinning .reel-symbol {
@@ -113,6 +119,11 @@ button:disabled {
     justify-content: center;
     flex-wrap: wrap;
     gap: 12px;
+}
+
+#stopButton:not(:disabled) {
+    background: linear-gradient(135deg, #e87d58, #b84932);
+    color: #fff8ee;
 }
 
 #result {
@@ -173,5 +184,27 @@ footer a:hover {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .slot-machine {
+        padding: 14px 8px;
+        border-width: 5px;
+    }
+
+    .reels {
+        gap: 4px;
+        padding: 7px 5px;
+        border-width: 3px;
+    }
+
+    .reel {
+        height: clamp(72px, 25vw, 90px);
+        border-width: 2px;
+    }
+
+    .reel-symbol {
+        font-size: clamp(1.3rem, 7.2vw, 2rem);
     }
 }

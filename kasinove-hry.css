@@ -1,0 +1,331 @@
+.extra-games-page {
+    width: min(100% - 32px, 1000px);
+}
+
+.extra-games-intro {
+    margin: 0 auto 28px;
+    text-align: center;
+}
+
+.extra-games-intro h2 {
+    margin: 10px 0;
+    color: var(--casino-gold);
+    font-size: clamp(2rem, 5vw, 3.3rem);
+}
+
+.extra-games-intro > p:last-child {
+    max-width: 600px;
+    margin: 0 auto;
+    color: var(--casino-muted);
+    line-height: 1.6;
+}
+
+.game-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 24px 0 16px;
+}
+
+.game-tab {
+    min-height: 42px;
+    border-color: var(--casino-line);
+    background: var(--casino-surface);
+    color: var(--casino-muted);
+}
+
+.game-tab.active {
+    border-color: rgba(231, 200, 117, 0.65);
+    background: rgba(231, 200, 117, 0.12);
+    color: var(--casino-gold);
+}
+
+.extra-game-panel {
+    padding: clamp(18px, 4vw, 32px);
+    border: 1px solid var(--casino-line);
+    border-radius: 20px;
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(35, 97, 67, 0.2), transparent 55%),
+        var(--casino-surface);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.22);
+}
+
+.extra-game-panel[hidden] {
+    display: none;
+}
+
+.extra-game-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.extra-game-heading h2 {
+    margin: 6px 0 0;
+    color: var(--casino-text);
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+}
+
+.extra-game-badge {
+    padding: 8px 12px;
+    border: 1px solid var(--casino-line);
+    border-radius: 999px;
+    color: var(--casino-gold);
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.extra-game-controls {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.extra-game-controls .field {
+    display: grid;
+    min-width: 160px;
+    gap: 7px;
+    color: var(--casino-muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: left;
+}
+
+.extra-game-controls input,
+.extra-game-controls select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--casino-line);
+    border-radius: 9px;
+    background: #0b1912;
+    color: var(--casino-text);
+    font: inherit;
+}
+
+.baccarat-table {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 18px;
+    min-height: 220px;
+    padding: clamp(18px, 4vw, 34px);
+    border: 1px solid rgba(220, 190, 115, 0.22);
+    border-radius: 160px 160px 28px 28px;
+    background:
+        radial-gradient(ellipse, rgba(57, 146, 91, 0.5), transparent 72%),
+        linear-gradient(145deg, #145834, #0b3927 65%, #082b20);
+}
+
+.baccarat-hand h3 {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    color: #f3df9e;
+}
+
+.baccarat-hand h3 span {
+    color: var(--casino-text);
+}
+
+.baccarat-vs {
+    color: rgba(242, 220, 149, 0.65);
+    font-size: 0.8rem;
+    font-weight: 900;
+}
+
+.playing-cards,
+.poker-hand {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 72px;
+}
+
+.playing-card,
+.poker-card {
+    display: grid;
+    width: 52px;
+    height: 72px;
+    place-items: center;
+    border: 1px solid #e4e2d9;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #fff, #f0eee6);
+    color: #20231f;
+    font-size: 1.2rem;
+    font-weight: 800;
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+}
+
+.playing-card.red-suit,
+.poker-card.red-suit {
+    color: #c33b42;
+}
+
+.game-result {
+    text-align: center;
+}
+
+.keno-numbers {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 8px;
+    width: min(100%, 680px);
+    margin: 22px auto;
+}
+
+.keno-number {
+    min-height: 48px;
+    padding: 6px;
+    border-color: var(--casino-line);
+    background: #0b1912;
+    color: var(--casino-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.keno-number.selected {
+    border-color: rgba(231, 200, 117, 0.65);
+    background: rgba(231, 200, 117, 0.16);
+    color: var(--casino-gold);
+}
+
+.keno-number.drawn {
+    border-color: rgba(116, 185, 145, 0.6);
+    background: rgba(37, 111, 74, 0.28);
+    color: #a9e4bc;
+}
+
+.keno-number.hit {
+    background: linear-gradient(145deg, #e3c66f, #a9832b);
+    color: #15170e;
+}
+
+.keno-drawn {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 14px;
+}
+
+.keno-drawn span {
+    display: grid;
+    width: 34px;
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid var(--casino-line);
+    border-radius: 50%;
+    background: #0b1912;
+    color: var(--casino-muted);
+    font-size: 0.82rem;
+}
+
+.keno-drawn span.keno-drawn-hit {
+    background: #b89442;
+    color: #15170e;
+    font-weight: 800;
+}
+
+.poker-hand {
+    min-height: 130px;
+    gap: 12px;
+    margin: 22px auto;
+}
+
+.poker-card {
+    width: 76px;
+    height: 112px;
+    gap: 0;
+    font-size: 1.35rem;
+    cursor: pointer;
+}
+
+.poker-card span:last-child {
+    font-size: 2rem;
+}
+
+.poker-card.held {
+    outline: 3px solid var(--casino-gold);
+    outline-offset: 3px;
+    transform: translateY(-6px);
+}
+
+.poker-card:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.poker-paytable {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.poker-paytable span {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    padding: 9px;
+    border: 1px solid var(--casino-line);
+    border-radius: 8px;
+    color: var(--casino-muted);
+    font-size: 0.76rem;
+}
+
+.poker-paytable strong {
+    color: var(--casino-gold);
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .extra-games-page {
+        width: calc(100% - 24px);
+    }
+
+    .extra-game-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .baccarat-table {
+        grid-template-columns: 1fr;
+        gap: 5px;
+        border-radius: 22px;
+    }
+
+    .baccarat-vs {
+        text-align: center;
+    }
+
+    .keno-numbers {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .keno-number {
+        min-height: 44px;
+    }
+
+    .poker-paytable {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .extra-game-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .extra-game-controls .field,
+    .extra-game-controls > button {
+        width: 100%;
+    }
+}

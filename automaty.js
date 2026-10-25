@@ -1,4 +1,7 @@
-const symbols = ['🍒', '🍋', '⭐', '🔔', '🍉', '7️⃣'];
+const symbols = [
+    '🍒', '🍋', '⭐', '🔔', '🍉', '7️⃣',
+    '🍇', '🍀', '💎', '🍊', '🃏', '💰'
+];
 const reels = Array.from(document.querySelectorAll('.reel'));
 const spinButton = document.getElementById('spinButton');
 const stopButton = document.getElementById('stopButton');
@@ -47,7 +50,12 @@ async function stopSlot() {
         const counts = new Map();
         result.forEach((symbol) => counts.set(symbol, (counts.get(symbol) || 0) + 1));
         const matchingCount = Math.max(...counts.values());
-        const multiplier = matchingCount === 3 ? (result[0] === '7️⃣' ? 25 : 10) : matchingCount === 2 ? 2 : 0;
+        const matchingSymbol = [...counts.entries()]
+            .find(([, count]) => count === matchingCount)?.[0];
+        const multiplier = matchingCount === 5
+            ? matchingSymbol === '⭐' ? 50 : 25
+            : matchingCount === 4 ? 8
+                : matchingCount === 3 ? 3 : 0;
         const payout = currentWager * multiplier;
         const credited = payout === 0 || await window.CasinoApp.payout(payout);
         resultDiv.textContent = payout > 0 && credited
@@ -60,6 +68,6 @@ async function stopSlot() {
         isSpinning = false;
         document.getElementById('betAmount').disabled = false;
     } else {
-        resultDiv.textContent = `Zastaveno ${stoppedReels} ze 3 válců. Zastavte další.`;
+        resultDiv.textContent = `Zastaveno ${stoppedReels} z ${reels.length} válců. Zastavte další.`;
     }
 }

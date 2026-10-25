@@ -81,6 +81,14 @@ suggestion from the form on the home page. Feedback is stored in the private
 change each message's status. Publish the current `firestore.rules` for these
 permissions and status updates to take effect.
 
+If submitting feedback shows **Missing or insufficient permissions**, this
+project's deployed Firestore rules do not yet include the `/feedback/{feedbackId}`
+match (or the signed-in email is not verified). In Firebase Console open
+**Firestore Database → Rules**, publish the complete current `firestore.rules`
+file from this repository, then sign out and back in after verifying the email.
+The feedback collection is intentionally private; do not make it publicly
+writable to work around this error.
+
 The seven daily rewards are 100, 200, 300, 400, 500, 600, and 1,000 credits.
 The first is available as soon as the verified account is created; later
 rewards unlock 24 hours after the previous claim. Every reward card displays
