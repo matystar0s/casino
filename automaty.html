@@ -14,23 +14,33 @@
         <div id="casinoAccount" class="account-panel"></div>
     </header>
     <main>
-        <p>Vítejte ve hře Automaty! Roztočte válce a zkuste své štěstí.</p>
+        <p class="machine-intro">Pět válců, dvanáct symbolů a jedna páka. Roztočte automat a zastavte válce postupně.</p>
         <div class="game-options">
             <label class="field" for="betAmount">
                 <span>Sázka v kreditech</span>
-                <input id="betAmount" type="number" min="1" step="1" value="25" inputmode="numeric">
+                <input id="betAmount" type="number" min="1" max="180143985094819" step="1" value="25" inputmode="numeric">
             </label>
         </div>
         <section class="slot-machine" aria-label="Automat s pěti válci">
-            <div class="machine-top" aria-hidden="true">★ ŠŤASTNÁ SEDMIČKA ★</div>
-            <div class="reels">
-                <div class="reel" aria-label="První válec"><span class="reel-symbol">🍒</span></div>
-                <div class="reel" aria-label="Druhý válec"><span class="reel-symbol">🍋</span></div>
-                <div class="reel" aria-label="Třetí válec"><span class="reel-symbol">⭐</span></div>
-                <div class="reel" aria-label="Čtvrtý válec"><span class="reel-symbol">🔔</span></div>
-                <div class="reel" aria-label="Pátý válec"><span class="reel-symbol">🍇</span></div>
+            <div class="machine-marquee">
+                <div class="machine-top" aria-hidden="true">★ ŠŤASTNÁ SEDMIČKA ★</div>
+                <div class="machine-lights" aria-hidden="true"><span>●</span><span>●</span><span>●</span><span>●</span><span>●</span></div>
             </div>
-            <div class="machine-lights" aria-hidden="true">●　●　●　●　●</div>
+            <div class="machine-play-area">
+                <div class="reels">
+                    <div class="reel" aria-label="První válec"><span class="reel-symbol">🍒</span></div>
+                    <div class="reel" aria-label="Druhý válec"><span class="reel-symbol">🍋</span></div>
+                    <div class="reel" aria-label="Třetí válec"><span class="reel-symbol">⭐</span></div>
+                    <div class="reel" aria-label="Čtvrtý válec"><span class="reel-symbol">🔔</span></div>
+                    <div class="reel" aria-label="Pátý válec"><span class="reel-symbol">🍇</span></div>
+                </div>
+                <button id="machineLever" class="machine-lever" type="button" aria-label="Roztočit válce">
+                    <span class="lever-track" aria-hidden="true"></span>
+                    <span class="lever-stem" aria-hidden="true"></span>
+                    <span class="lever-knob" aria-hidden="true"></span>
+                </button>
+            </div>
+            <div class="machine-base" aria-hidden="true"><span>★★★★★</span><span>DEMO · JACKPOT</span><span>★★★★★</span></div>
         </section>
         <div class="slot-controls">
             <button id="spinButton" type="button" onclick="spinSlots()">Roztočit válce</button>
@@ -45,5 +55,6 @@
     <script src="firebase-config.js"></script>
     <script type="module" src="casino.js"></script>
     <script src="automaty.js"></script>
+    <script src="machine-lever.js"></script>
 </body>
 </html>
