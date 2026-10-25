@@ -134,6 +134,11 @@
     letter-spacing: 1.2px;
 }
 
+.rocket-zoom-label {
+    fill: #91dbb6;
+    font-size: 9px;
+}
+
 .rocket-star {
     fill: #f0e2b7;
     opacity: 0.42;

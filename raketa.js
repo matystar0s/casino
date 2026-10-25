@@ -11,7 +11,9 @@
     const flightPath = document.getElementById('rocketFlightPath');
     const areaPath = document.getElementById('rocketAreaPath');
     const ship = document.getElementById('rocketShip');
+    const zoomDisplay = document.getElementById('rocketZoom');
     const starField = document.getElementById('rocketStars');
+    const cameraLookaheadSeconds = 7;
     let state = 'idle';
     let wager = 0;
     let crashMultiplier = 0;
@@ -59,24 +61,25 @@
         statusDisplay.replaceChildren(dot, document.createTextNode(` ${text}`));
     }
 
-    function renderFlight(multiplier) {
-        const logCrash = Math.log(Math.max(crashMultiplier, 1.01));
-        const progress = Math.min(Math.log(Math.max(multiplier, 1)) / logCrash, 1);
-        const pointCount = Math.max(1, Math.ceil(progress * 36));
+    function renderFlight(multiplier, elapsedSeconds) {
+        const visibleSeconds = elapsedSeconds + cameraLookaheadSeconds;
+        const visibleMultiplier = Math.exp(GROWTH_RATE * visibleSeconds);
+        const progress = elapsedSeconds / visibleSeconds;
+        const pointCount = Math.max(1, Math.ceil(elapsedSeconds * 4));
         const points = Array.from({ length: pointCount + 1 }, (_, index) => {
-            const timeProgress = progress * index / pointCount;
-            const valueProgress = (Math.exp(logCrash * timeProgress) - 1) /
-                (Math.exp(logCrash) - 1);
-            const x = 56 + timeProgress * 674;
-            const y = 310 - valueProgress * 260;
+            const pointTime = elapsedSeconds * index / pointCount;
+            const pointMultiplier = Math.exp(GROWTH_RATE * pointTime);
+            const x = 56 + (pointTime / visibleSeconds) * 674;
+            const y = 310 - ((pointMultiplier - 1) / (visibleMultiplier - 1)) * 260;
             return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
         });
-        const x = 56 + progress * 674;
-        const y = 310 - ((multiplier - 1) / (crashMultiplier - 1)) * 260;
+        const x = 56 + (elapsedSeconds / visibleSeconds) * 674;
+        const y = 310 - ((multiplier - 1) / (visibleMultiplier - 1)) * 260;
         const path = points.join(' ');
         flightPath.setAttribute('d', path);
-        areaPath.setAttribute('d', `${path} L${x} 310 Z`);
+        areaPath.setAttribute('d', `${path} L${x.toFixed(1)} 310 Z`);
         ship.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(-${22 + progress * 22})`);
+        zoomDisplay.textContent = `ODDÁLENÍ ${(visibleSeconds / cameraLookaheadSeconds).toFixed(1)}×`;
     }
 
     function formatCredits(amount) {
@@ -106,7 +109,8 @@
             crashMultiplier
         );
         multiplierDisplay.textContent = `${currentMultiplier.toFixed(2)}×`;
-        renderFlight(currentMultiplier);
+        const elapsedSeconds = Math.max(0, timestamp - startedAt) / 1000;
+        renderFlight(currentMultiplier, elapsedSeconds);
         const cashout = Math.floor(wager * currentMultiplier);
         cashoutButton.querySelector('strong').textContent = `${formatCredits(cashout)} kr · ${currentMultiplier.toFixed(2)}×`;
     }
@@ -118,7 +122,7 @@
         currentMultiplier = crashMultiplier;
         multiplierDisplay.textContent = `${crashMultiplier.toFixed(2)}×`;
         multiplierDisplay.classList.add('crashed');
-        renderFlight(crashMultiplier);
+        renderFlight(crashMultiplier, Math.max(0, performance.now() - startedAt) / 1000);
         setStatus('Raketa havarovala', 'danger');
         messageDisplay.textContent = `Pád při ${crashMultiplier.toFixed(2)}×. Sázka ${formatCredits(wager)} kreditů propadla.`;
         addHistory(crashMultiplier, 'crash');
@@ -168,7 +172,7 @@
             cashoutButton.querySelector('strong').textContent = `${formatCredits(wager)} kr · 1.00×`;
             messageDisplay.textContent = 'Raketa letí! Vyber výhru kdykoliv před pádem.';
             setStatus('Let probíhá', 'flying');
-            renderFlight(1);
+            renderFlight(1, 0);
             frameId = window.requestAnimationFrame(tick);
         } catch (error) {
             console.error('Nepodařilo se odstartovat raketu.', error);
